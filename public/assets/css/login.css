@@ -1,0 +1,517 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* =========================
+   HALAMAN LOGIN
+========================= */
+
+
+.login-page {
+    min-height: 100vh;
+    width: 100%;
+    background-image:
+        linear-gradient(
+            135deg,
+            rgba(190, 25, 55, 0.50),
+            rgba(245, 100, 125, 0.45)
+        ),
+        url("../images/bgtelkom.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Dekorasi lingkaran */
+
+.login-page::before {
+    content: "";
+
+    position: absolute;
+
+    width: 500px;
+    height: 500px;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.06);
+
+    top: -220px;
+    left: -150px;
+}
+
+.login-page::after {
+    content: "";
+
+    position: absolute;
+
+    width: 450px;
+    height: 450px;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.05);
+
+    bottom: -220px;
+    right: -120px;
+}
+
+/* =========================
+   CONTAINER
+========================= */
+
+.login-container {
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 80px;
+
+    padding: 40px 7%;
+
+    position: relative;
+
+    z-index: 2;
+}
+
+/* =========================
+   BAGIAN KIRI
+========================= */
+
+.login-info {
+    width: 48%;
+    max-width: 540px;
+
+    color: white;
+}
+
+.login-logo {
+    width: 260px;
+
+    background: white;
+
+    padding: 12px 18px;
+
+    border-radius: 10px;
+
+    margin-bottom: 55px;
+}
+
+.info-content {
+    max-width: 480px;
+}
+
+.hcm-text {
+    font-size: 65px;
+
+    font-weight: 800;
+
+    line-height: 1;
+
+    letter-spacing: 2px;
+}
+
+.info-content h1 {
+    font-size: 36px;
+
+    line-height: 1.2;
+
+    font-weight: 700;
+
+    margin-top: 12px;
+}
+
+.red-line {
+    width: 65px;
+
+    height: 5px;
+
+    border-radius: 10px;
+
+    background: white;
+
+    margin: 22px 0;
+}
+
+.info-content p {
+    font-size: 16px;
+
+    line-height: 1.8;
+
+    color: rgba(255, 255, 255, 0.9);
+
+    max-width: 450px;
+}
+
+/* =========================
+   LOGIN CARD
+========================= */
+
+.login-card {
+    width: 430px;
+
+    background: white;
+
+    border-radius: 20px;
+
+    padding: 38px 42px;
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.28);
+}
+
+.card-logo {
+    width: 210px;
+
+    display: block;
+
+    margin: 0 auto 25px;
+}
+
+.login-card h2 {
+    color: #202b3c;
+
+    font-size: 28px;
+
+    font-weight: 800;
+
+    margin-bottom: 8px;
+}
+
+.login-description {
+    color: #7c8490;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+
+    margin-bottom: 28px;
+}
+
+/* =========================
+   INPUT
+========================= */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+
+    color: #273449;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    margin-bottom: 8px;
+}
+
+.input-group-custom {
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+
+    border: 1px solid #dfe3e8;
+
+    border-radius: 8px;
+
+    background: white;
+
+    overflow: hidden;
+
+    transition: 0.2s;
+}
+
+.input-group-custom:focus-within {
+    border-color: #d71920;
+
+    box-shadow:
+        0 0 0 3px rgba(215, 25, 32, 0.10);
+}
+
+.input-group-custom > i {
+    width: 45px;
+
+    text-align: center;
+
+    color: #7d8490;
+
+    font-size: 17px;
+}
+
+.input-group-custom input {
+    flex: 1;
+
+    height: 100%;
+
+    border: none;
+
+    outline: none;
+
+    font-size: 13px;
+
+    color: #333;
+
+    padding-right: 10px;
+}
+
+.input-group-custom input::placeholder {
+    color: #a4abb4;
+}
+
+.password-button {
+    width: 45px;
+
+    height: 100%;
+
+    border: none;
+
+    background: transparent;
+
+    color: #7d8490;
+
+    cursor: pointer;
+}
+
+/* =========================
+   LOGIN BUTTON
+========================= */
+
+.btn-login {
+    width: 100%;
+
+    height: 48px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #b40020,
+            #d71920,
+            #ed3345
+        );
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+    margin-top: 5px;
+}
+
+.btn-login i {
+    margin-left: 8px;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(215, 25, 32, 0.25);
+}
+
+/* =========================
+   DIVIDER
+========================= */
+
+.divider {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin: 25px 0;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+
+    flex: 1;
+
+    height: 1px;
+
+    background: #e4e6e9;
+}
+
+.divider span {
+    color: #969ca5;
+
+    font-size: 12px;
+}
+
+/* =========================
+   REGISTER
+========================= */
+
+.btn-register {
+    width: 100%;
+
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    border: 1px solid #d71920;
+
+    border-radius: 8px;
+
+    text-decoration: none;
+
+    color: #d71920;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    transition: 0.2s;
+}
+
+.btn-register:hover {
+    background: #fff1f2;
+
+    color: #b40020;
+}
+
+/* =========================
+   COPYRIGHT
+========================= */
+
+.copyright {
+    text-align: center;
+
+    color: #a1a6ad;
+
+    font-size: 10px;
+
+    margin-top: 28px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+
+    .login-info {
+        display: none;
+    }
+
+    .login-container {
+        padding: 25px 20px;
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .login-card {
+        width: 100%;
+
+        padding: 30px 24px;
+
+        border-radius: 15px;
+    }
+
+    .card-logo {
+        width: 150px;
+    }
+
+}
+
+
+/* Mengecilkan ukuran kotak dan font login/register */
+.login-card {
+    width: 310px;
+    max-width: 100%;
+    padding: 18px 22px;
+    border-radius: 12px;
+}
+
+/* Logo */
+.card-logo {
+    width: 125px;
+    margin: 0 auto 10px;
+    display: block;
+}
+
+/* Judul */
+.login-card h2 {
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+/* Deskripsi */
+.login-description {
+    font-size: 10px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+/* Label: NIK, nama, password, dan lainnya */
+.form-group {
+    margin-bottom: 9px;
+}
+
+.form-group label {
+    font-size: 10px;
+    margin-bottom: 4px;
+}
+
+/* Kotak input */
+.input-group-custom {
+    height: 33px;
+}
+
+.input-group-custom input {
+    font-size: 10px;
+}
+
+/* Tombol */
+.btn-login,
+.btn-register {
+    min-height: 33px;
+    font-size: 10px;
+}
+
+/* Tulisan pemisah */
+.divider {
+    margin: 9px 0;
+    font-size: 10px;
+}
+
+/* Copyright */
+.copyright {
+    font-size: 8px;
+    margin-top: 8px;
+}
