@@ -1,0 +1,37 @@
+{
+	"bracketSameLine": false,
+	"braceStyle": "allman",
+	"printWidth": 120,
+	"tabWidth": 4,
+	"useTabs": true,
+	"semi": true,
+	"plugins": ["prettier-plugin-blade"],
+	"overrides": [
+		{
+			"files": ["*.blade.php"],
+			"options": {
+				"parser": "blade",
+				"tabWidth": 1,
+				"useTabs": true,
+				"wrapAttributes": "auto",
+				"wrapLineLength": 120,
+				"indentInnerHtml": true,
+				"sortTailwindcssClasses": false,
+				"sortHtmlAttributes": "none"
+			}
+		},
+		{
+			"files": ["*.js"],
+			"options": {
+				"parser": "babel",
+				"tabWidth": 4,
+				"useTabs": true,
+				"bracketSameLine": false,
+				"semi": true,
+				"singleQuote": true,
+				"trailingComma": "none",
+				"arrowParens": "always"
+			}
+		}
+	]
+}

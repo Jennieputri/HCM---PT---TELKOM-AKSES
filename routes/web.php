@@ -1,7 +1,7 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 
 /*
 |--------------------------------------------------------------------------
@@ -13,11 +13,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -29,7 +27,7 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
-Route::post('/register', function (\Illuminate\Http\Request $request) {
+Route::post('/register', function (Request $request) {
 
     $request->validate([
         'nik' => ['required', 'regex:/^[0-9]+$/'],
@@ -42,5 +40,5 @@ Route::post('/register', function (\Illuminate\Http\Request $request) {
     ]);
 
     return redirect()->route('login');
-    
+
 })->name('register.submit');
