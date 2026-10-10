@@ -1,9 +1,3 @@
-@if (session("success"))
-	<div class="alert alert-success">
-		{{ session("success") }}
-	</div>
-@endif
-
 <!DOCTYPE html>
 <html lang="id">
 	<head>
@@ -12,23 +6,19 @@
 
 		<title>Login | HCM PT Telkom Akses Palangkaraya</title>
 
-		<!-- Bootstrap 5 -->
+		<link rel="icon" type="image/png" sizes="32x32" href="{{ asset("favicon-32x32.png") }}" />
+		<link rel="apple-touch-icon" href="{{ asset("logo-icon.png") }}" />
+
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-		<!-- Bootstrap Icons -->
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
 
-		<!-- CSS Login -->
 		<link rel="stylesheet" href="{{ asset("assets/css/login.css") }}" />
 	</head>
 
 	<body>
 		<div class="login-page">
 			<div class="login-container">
-				<!-- =========================
-             BAGIAN KIRI
-        ========================== -->
-
 				<div class="login-info">
 					<div class="info-content">
 						<span class="hcm-text">HCM</span>
@@ -48,24 +38,17 @@
 					</div>
 				</div>
 
-				<!-- =========================
-             LOGIN CARD
-        ========================== -->
-
 				<div class="login-card">
-					<!-- Logo -->
-					<img src="{{ asset("assets/images/Telkomakses.jpeg") }}" class="card-logo" alt="Logo Telkom Akses" />
+					<img src="{{ asset("assets/images/logo-telkomakses.png") }}" class="card-logo" alt="Logo Telkom Akses" />
 
 					<h2>Selamat Datang</h2>
 
 					<p class="login-description">Silakan masuk untuk mengakses HCM PT Telkom Akses Palangkaraya.</p>
 
-					<!-- Form Login -->
+					@include("partials.alerts")
 
-					<form action="#" method="POST">
+					<form action="{{ route("login.submit") }}" method="POST">
 						@csrf
-
-						<!-- NIK -->
 
 						<div class="form-group">
 							<label for="nik">NIK</label>
@@ -73,11 +56,18 @@
 							<div class="input-group-custom">
 								<i class="bi bi-person"></i>
 
-								<input type="text" id="nik" name="nik" placeholder="Masukkan NIK" autocomplete="username" required />
+								<input
+									type="text"
+									id="nik"
+									name="nik"
+									value="{{ old("nik") }}"
+									placeholder="Masukkan NIK"
+									inputmode="numeric"
+									autocomplete="username"
+									required
+								/>
 							</div>
 						</div>
-
-						<!-- Password -->
 
 						<div class="form-group">
 							<label for="password">Password</label>
@@ -100,37 +90,25 @@
 							</div>
 						</div>
 
-						<!-- Tombol Login -->
-
 						<button type="submit" class="btn-login">
 							Masuk
 							<i class="bi bi-arrow-right"></i>
 						</button>
 					</form>
 
-					<!-- Divider -->
-
 					<div class="divider">
 						<span>atau</span>
 					</div>
-
-					<!-- Register -->
 
 					<a href="{{ route("register") }}" class="btn-register">
 						<i class="bi bi-person-plus"></i>
 						Daftar Akun
 					</a>
 
-					<!-- Copyright -->
-
 					<div class="copyright">© 2026 PT Telkom Akses Palangkaraya</div>
 				</div>
 			</div>
 		</div>
-
-		<!-- =========================
-     JAVASCRIPT PASSWORD
-========================== -->
 
 		<script>
 			function togglePassword() {

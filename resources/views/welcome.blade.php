@@ -6,10 +6,8 @@
 
 		<title>HCM PT Telkom Akses Palangkaraya</title>
 
-		<!-- Bootstrap 5 -->
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-		<!-- Bootstrap Icons -->
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
 
 		<style>
@@ -18,7 +16,6 @@
 				font-family: 'Segoe UI', Arial, sans-serif;
 			}
 
-			/* SIDEBAR */
 			.sidebar {
 				width: 250px;
 				height: 100vh;
@@ -98,13 +95,11 @@
 				color: white;
 			}
 
-			/* MAIN */
 			.main-content {
 				margin-left: 250px;
 				min-height: 100vh;
 			}
 
-			/* TOPBAR */
 			.topbar {
 				height: 75px;
 				background: white;
@@ -153,7 +148,6 @@
 				font-size: 11px;
 			}
 
-			/* CONTENT */
 			.content {
 				padding: 30px;
 			}
@@ -189,7 +183,6 @@
 				opacity: 0.85;
 			}
 
-			/* STAT CARD */
 			.stat-card {
 				background: white;
 				border-radius: 12px;
@@ -247,7 +240,6 @@
 				margin: 4px 0 0;
 			}
 
-			/* TABLE */
 			.dashboard-card {
 				background: white;
 				border: 1px solid #eee;
@@ -309,7 +301,6 @@
 				color: #b5121b;
 			}
 
-			/* RESPONSIVE */
 			@media (max-width: 768px) {
 				.sidebar {
 					width: 70px;
@@ -360,7 +351,6 @@
 	</head>
 
 	<body>
-		<!-- SIDEBAR -->
 		<div class="sidebar">
 			<div class="sidebar-logo">
 				<div class="logo-box">TA</div>
@@ -408,9 +398,7 @@
 			</div>
 		</div>
 
-		<!-- MAIN CONTENT -->
 		<div class="main-content">
-			<!-- TOPBAR -->
 			<div class="topbar">
 				<div class="page-title">
 					<h4>Dashboard</h4>
@@ -429,16 +417,13 @@
 				</div>
 			</div>
 
-			<!-- CONTENT -->
 			<div class="content">
-				<!-- WELCOME -->
 				<div class="welcome-card">
 					<h3>Selamat Datang di HCM 👋</h3>
 
 					<p>Sistem Informasi Human Capital Management PT Telkom Akses Palangkaraya</p>
 				</div>
 
-				<!-- STATISTICS -->
 				<div class="row g-4 mb-4">
 					<div class="col-xl-3 col-md-6">
 						<div class="stat-card">
@@ -485,9 +470,7 @@
 					</div>
 				</div>
 
-				<!-- BOTTOM SECTION -->
 				<div class="row g-4">
-					<!-- ABSENSI -->
 					<div class="col-lg-8">
 						<div class="dashboard-card">
 							<div class="dashboard-card-header">
@@ -522,7 +505,6 @@
 						</div>
 					</div>
 
-					<!-- INFORMASI -->
 					<div class="col-lg-4">
 						<div class="dashboard-card">
 							<div class="dashboard-card-header">
@@ -563,7 +545,6 @@
 			</div>
 		</div>
 
-		<!-- Bootstrap JS -->
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	</body>
 </html>

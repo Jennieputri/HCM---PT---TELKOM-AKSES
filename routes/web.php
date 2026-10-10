@@ -1,44 +1,20 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Login
-|--------------------------------------------------------------------------
-*/
+Route::middleware('guest')->group(function ()
+{
+    Route::get('login', [AuthController::class, 'login'])->name('login');
+    Route::post('login', [AuthController::class, 'login_post'])->middleware('throttle:10,1')->name('login.submit');
 
-Route::get('/', function () {
-    return redirect()->route('login');
+    Route::get('register', [AuthController::class, 'register'])->name('register');
+    Route::post('register', [AuthController::class, 'register_post'])->middleware('throttle:5,1')->name('register.submit');
 });
 
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
-
-/*
-|--------------------------------------------------------------------------
-| Register
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/register', function () {
-    return view('auth.register');
-})->name('register');
-
-Route::post('/register', function (Request $request) {
-
-    $request->validate([
-        'nik' => ['required', 'regex:/^[0-9]+$/'],
-        'name' => ['required', 'string'],
-        'password' => ['required', 'string', 'min:8', 'confirmed'],
-    ], [
-        'nik.regex' => 'NIK harus berupa angka!',
-        'password.min' => 'Password minimal 8 karakter!',
-        'password.confirmed' => 'Konfirmasi password tidak cocok.',
-    ]);
-
-    return redirect()->route('login');
-
-})->name('register.submit');
+Route::middleware('auth')->group(function ()
+{
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+});
