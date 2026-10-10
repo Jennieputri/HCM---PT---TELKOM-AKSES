@@ -1,3 +1,7 @@
+:root {
+    --hcm-brand: #d71920;
+}
+
 * {
     margin: 0;
     padding: 0;

@@ -5,7 +5,7 @@
 
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-		<title>Register | HCM PT Telkom Akses Palangkaraya</title>
+		<title>Register | HCM PT. Telkom Akses Branch Palangkaraya</title>
 
 		<link rel="icon" type="image/png" sizes="32x32" href="{{ asset("favicon-32x32.png") }}" />
 		<link rel="apple-touch-icon" href="{{ asset("logo-icon.png") }}" />
@@ -25,14 +25,14 @@
 						<span class="hcm-text">HCM</span>
 
 						<h1>
-							PT Telkom Akses
+							PT. Telkom Akses
 							<br />
-							Palangkaraya
+							Branch Palangkaraya
 						</h1>
 
 						<div class="red-line"></div>
 
-						<p>Buat akun untuk mengakses Human Capital Management System PT Telkom Akses Palangkaraya.</p>
+						<p>Buat akun untuk mengakses Human Capital Management System PT. Telkom Akses Branch Palangkaraya.</p>
 					</div>
 				</div>
 
@@ -132,7 +132,7 @@
 						Kembali ke Login
 					</a>
 
-					<div class="copyright">© 2026 PT Telkom Akses Palangkaraya</div>
+					<div class="copyright">© 2026 PT. Telkom Akses Branch Palangkaraya</div>
 				</div>
 			</div>
 		</div>

@@ -3,8 +3,9 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="csrf-token" content="{{ csrf_token() }}" />
 
-		<title>@yield("title") | HCM PT Telkom Akses Palangkaraya</title>
+		<title>@yield("title") | HCM PT. Telkom Akses Branch Palangkaraya</title>
 
 		<script src="{{ asset("assets/js/color-mode.js") }}"></script>
 
@@ -13,7 +14,17 @@
 
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.3.0/index.css" />
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@2.1.8/css/dataTables.bootstrap5.min.css"
+		/>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+		/>
 		<link rel="stylesheet" href="{{ asset("assets/css/adminlte.min.css") }}" />
+		<link rel="stylesheet" href="{{ asset("assets/css/hcm.css") }}" />
 	</head>
 
 	<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
@@ -122,6 +133,28 @@
 									<p>Beranda</p>
 								</a>
 							</li>
+
+							<li class="nav-header">ADMINISTRATOR</li>
+
+							<li class="nav-item">
+								<a
+									href="{{ route("administrator.employee") }}"
+									class="nav-link {{ request()->routeIs("administrator.employee") ? "active" : "" }}"
+								>
+									<i class="nav-icon bi bi-people"></i>
+									<p>Data Karyawan</p>
+								</a>
+							</li>
+
+							<li class="nav-item">
+								<a
+									href="{{ route("administrator.role") }}"
+									class="nav-link {{ request()->routeIs("administrator.role") ? "active" : "" }}"
+								>
+									<i class="nav-icon bi bi-shield-lock"></i>
+									<p>Data Role</p>
+								</a>
+							</li>
 						</ul>
 					</nav>
 				</div>
@@ -146,12 +179,20 @@
 			</main>
 
 			<footer class="app-footer">
-				<strong>&copy; {{ date("Y") }} PT Telkom Akses Palangkaraya.</strong>
+				<strong>&copy; {{ date("Y") }} PT. Telkom Akses Branch Palangkaraya</strong>
 			</footer>
 		</div>
 
 		<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
 		<script src="{{ asset("assets/js/adminlte.min.js") }}"></script>
+		<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/id.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/datatables.net@2.1.8/js/dataTables.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@2.1.8/js/dataTables.bootstrap5.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+		<script src="{{ asset("assets/js/hcm-ajax.js") }}"></script>
+		@stack("scripts")
 	</body>
 </html>
