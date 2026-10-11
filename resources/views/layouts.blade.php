@@ -12,7 +12,7 @@
 		<link rel="icon" type="image/png" sizes="32x32" href="{{ asset("favicon-32x32.png") }}" />
 		<link rel="apple-touch-icon" href="{{ asset("logo-icon.png") }}" />
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.3.0/index.css" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/source-sans-3@5.3.0/index.css" />
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
 		<link
 			rel="stylesheet"
@@ -27,7 +27,7 @@
 		<link rel="stylesheet" href="{{ asset("assets/css/hcm.css") }}" />
 	</head>
 
-	<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+	<body class="layout-fixed sidebar-expand-lg">
 		<div class="app-wrapper">
 			<nav class="app-header navbar navbar-expand bg-body">
 				<div class="container-fluid">
@@ -95,22 +95,43 @@
 							</ul>
 						</li>
 
-						<li class="nav-item d-none d-md-block">
-							<span class="nav-link">
-								<i class="bi bi-person-circle me-1" aria-hidden="true"></i>
-								{{ Auth::user()->name }}
-							</span>
-						</li>
+						@php($userInitial = mb_strtoupper(mb_substr((string) Auth::user()->name, 0, 1)))
 
-						<li class="nav-item">
-							<form action="{{ route("logout") }}" method="POST">
-								@csrf
+						<li class="nav-item dropdown user-menu">
+							<a
+								href="#"
+								class="nav-link dropdown-toggle d-flex align-items-center"
+								id="user-menu"
+								role="button"
+								data-bs-toggle="dropdown"
+								aria-expanded="false"
+								aria-label="Menu akun {{ Auth::user()->name }}"
+							>
+								<span class="user-avatar" aria-hidden="true">{{ $userInitial }}</span>
+								<span class="d-none d-md-inline ms-2">{{ Auth::user()->name }}</span>
+							</a>
 
-								<button type="submit" class="btn btn-link nav-link">
-									<i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
-									Keluar
-								</button>
-							</form>
+							<ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end" aria-labelledby="user-menu">
+								<li class="user-header">
+									<span class="user-avatar user-avatar-lg" aria-hidden="true">{{ $userInitial }}</span>
+
+									<p>
+										{{ Auth::user()->name }}
+										<small>NIK {{ Auth::user()->nik }}</small>
+									</p>
+								</li>
+
+								<li class="user-footer">
+									<form action="{{ route("logout") }}" method="POST">
+										@csrf
+
+										<button type="submit" class="btn btn-outline-primary w-100">
+											<i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
+											Keluar
+										</button>
+									</form>
+								</li>
+							</ul>
 						</li>
 					</ul>
 				</div>
@@ -120,7 +141,10 @@
 				<div class="sidebar-brand">
 					<a href="{{ route("home") }}" class="brand-link">
 						<img src="{{ asset("assets/images/logo-telkomakses-icon.png") }}" alt="Logo Telkom Akses" class="brand-image" />
-						<span class="brand-text fw-light">HCM Telkom Akses</span>
+						<span class="brand-text">
+							<strong>HCM</strong>
+							Telkom Akses
+						</span>
 					</a>
 				</div>
 
@@ -163,9 +187,22 @@
 			<main class="app-main">
 				<div class="app-content-header">
 					<div class="container-fluid">
-						<div class="row">
+						<div class="row align-items-end">
 							<div class="col-sm-6">
-								<h1 class="mb-0 fs-3">@yield("title")</h1>
+								<h1 class="page-title">@yield("title")</h1>
+							</div>
+
+							<div class="col-sm-6">
+								<nav aria-label="breadcrumb">
+									<ol class="breadcrumb float-sm-end">
+										@if (request()->routeIs("home"))
+											<li class="breadcrumb-item active" aria-current="page">Beranda</li>
+										@else
+											<li class="breadcrumb-item"><a href="{{ route("home") }}">Beranda</a></li>
+											<li class="breadcrumb-item active" aria-current="page">@yield("title")</li>
+										@endif
+									</ol>
+								</nav>
 							</div>
 						</div>
 					</div>
@@ -179,6 +216,7 @@
 			</main>
 
 			<footer class="app-footer">
+				<div class="float-end d-none d-sm-inline">Human Capital Management System</div>
 				<strong>&copy; {{ date("Y") }} PT. Telkom Akses Branch Palangkaraya</strong>
 			</footer>
 		</div>
