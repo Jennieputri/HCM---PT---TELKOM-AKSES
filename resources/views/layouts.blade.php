@@ -136,14 +136,20 @@
 					</ul>
 				</div>
 			</nav>
-
+			
 			<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
 				<div class="sidebar-brand">
-					<a href="{{ route("home") }}" class="brand-link">
-						<img src="{{ asset("assets/images/logo-telkomakses-icon.png") }}" alt="Logo Telkom Akses" class="brand-image" />
+					<a href="{{ route('home') }}" class="brand-link">
+						<span class="brand-logo-box">
+							<img
+								src="{{ asset('logo-icon.png') }}"
+								alt="Logo Telkom Akses"
+								class="brand-image"
+							>
+						</span>
+
 						<span class="brand-text">
-							<strong>HCM</strong>
-							Telkom Akses
+							<strong>HCM</strong> Telkom Akses
 						</span>
 					</a>
 				</div>
@@ -179,6 +185,17 @@
 									<p>Data Role</p>
 								</a>
 							</li>
+
+							<li class="nav-item">
+								<a
+									href="{{ route('administrator.absen') }}"
+									class="nav-link {{ request()->routeIs('administrator.absen') ? 'active' : '' }}"
+								>
+									<i class="nav-icon bi bi-calendar2-check"></i>
+									<p>Data Absen</p>
+								</a>
+							</li>
+
 						</ul>
 					</nav>
 				</div>

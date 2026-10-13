@@ -13,4 +13,9 @@ class AdministratorController extends Controller
     {
         return view('administrator.role');
     }
+
+    public function absen()
+    {
+        return view('administrator.absen');
+    }
 }

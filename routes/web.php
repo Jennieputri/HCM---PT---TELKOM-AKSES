@@ -22,6 +22,9 @@ Route::middleware('auth')->group(function ()
 
     Route::get('administrator/employee', [AdministratorController::class, 'employee'])->name('administrator.employee');
     Route::get('administrator/role', [AdministratorController::class, 'role'])->name('administrator.role');
+   
+    Route::get('administrator/absen', [AdministratorController::class, 'absen'])
+    ->name('administrator.absen');
 });
 
 Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(function ()
