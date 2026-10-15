@@ -15,11 +15,11 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
-		"@shufo/prettier-plugin-blade": "^1.16.2",
+		"@shufo/prettier-plugin-blade": "^1.5.7",
 		"@tailwindcss/vite": "^4.2.4",
 		"autoprefixer": "^10.5.0",
 		"axios": "^1.16.0",
-		"blade-formatter": "^1.44.4",
+		"blade-formatter": "^1.28.0",
 		"concurrently": "^10.0.3",
 		"eslint": "^10.3.0",
 		"eslint-config-prettier": "^10.1.5",

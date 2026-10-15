@@ -22,9 +22,15 @@ Route::middleware('auth')->group(function ()
 
     Route::get('administrator/employee', [AdministratorController::class, 'employee'])->name('administrator.employee');
     Route::get('administrator/role', [AdministratorController::class, 'role'])->name('administrator.role');
+
+    Route::get('administrator/position', [AdministratorController::class, 'position'])
+    ->name('administrator.position');
    
     Route::get('administrator/absen', [AdministratorController::class, 'absen'])
     ->name('administrator.absen');
+
+    Route::get('administrator/alat-kerja', [AdministratorController::class, 'alatKerja'])
+    ->name('administrator.alat-kerja');
 });
 
 Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(function ()
@@ -37,4 +43,13 @@ Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(
     Route::post('role/options', [AjaxController::class, 'role_options'])->name('role.options');
     Route::post('role/save', [AjaxController::class, 'role_save'])->name('role.save');
     Route::post('role/delete', [AjaxController::class, 'role_delete'])->name('role.delete');
+
+    Route::post('position/list', [AjaxController::class, 'position_list'])->name('position.list');
+    Route::post('position/save', [AjaxController::class, 'position_save'])->name('position.save');
+    Route::post('position/delete', [AjaxController::class, 'position_delete'])->name('position.delete');
+
+    Route::post('alat-kerja/list', [AjaxController::class, 'alatKerja_list'])->name('alat-kerja.list');
+    Route::post('alat-kerja/save', [AjaxController::class, 'alatKerja_save'])->name('alat-kerja.save');
+    Route::post('alat-kerja/delete', [AjaxController::class, 'alatKerja_delete'])->name('alat-kerja.delete');
+
 });

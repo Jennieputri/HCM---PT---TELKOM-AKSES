@@ -151,4 +151,122 @@ class AdministratorModel
     {
         DB::table('tb_role')->where('id', $roleId)->delete();
     }
+
+    public static function positionList($search, $orderColumn, $orderDirection, $start, $length)
+    {
+        $query = DB::table('tb_position')->select('id', 'name');
+
+        $totalRows = DB::table('tb_position')->count();
+
+        if ($search !== '') {
+            $query->where('name', 'like', '%'.$search.'%');
+        }
+
+        $filteredRows = (clone $query)->count();
+
+        $rows = $query->orderBy($orderColumn, $orderDirection)
+            ->offset($start)
+            ->limit($length)
+            ->get();
+
+        return compact('totalRows', 'filteredRows', 'rows');
+    }
+
+    public static function savePosition(array $position, $actorId)
+    {
+        $positionData = [
+            'name'       => $position['name'],
+            'updated_by' => $actorId,
+            'updated_at' => now(),
+        ];
+
+        if (empty($position['id'])) {
+            $positionData['created_by'] = $actorId;
+            $positionData['created_at'] = now();
+
+            DB::table('tb_position')->insert($positionData);
+
+            return;
+        }
+
+        DB::table('tb_position')
+            ->where('id', $position['id'])
+            ->update($positionData);
+    }
+
+    public static function deletePosition($positionId)
+    {
+        DB::table('tb_position')
+            ->where('id', $positionId)
+            ->delete();
+    }
+
+    
+    public static function alatKerjaList($search, $orderColumn, $orderDirection, $start, $length)
+    {
+        $query = DB::table('tb_alat_kerja')->select(
+            'id',
+            'nik_karyawan',
+            'kode_alat',
+            'nama_alat',
+            'tanggal_penyerahan',
+            'kondisi',
+            'status'
+        );
+
+        $totalRows = DB::table('tb_alat_kerja')->count();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('nik_karyawan', 'like', '%'.$search.'%')
+                    ->orWhere('kode_alat', 'like', '%'.$search.'%')
+                    ->orWhere('nama_alat', 'like', '%'.$search.'%')
+                    ->orWhere('kondisi', 'like', '%'.$search.'%')
+                    ->orWhere('status', 'like', '%'.$search.'%');
+            });
+        }
+
+        $filteredRows = (clone $query)->count();
+
+        $rows = $query->orderBy($orderColumn, $orderDirection)
+            ->offset($start)
+            ->limit($length)
+            ->get();
+
+        return compact('totalRows', 'filteredRows', 'rows');
+    }
+
+    public static function saveAlatKerja(array $alat, $actorId)
+    {
+        $alatData = [
+            'nik_karyawan'      => $alat['nik_karyawan'],
+            'kode_alat'         => $alat['kode_alat'],
+            'nama_alat'         => $alat['nama_alat'],
+            'tanggal_penyerahan' => $alat['tanggal_penyerahan'],
+            'kondisi'            => $alat['kondisi'],
+            'status'             => $alat['status'],
+            'updated_by'         => $actorId,
+            'updated_at'         => now(),
+        ];
+
+        if (empty($alat['id'])) {
+            $alatData['created_by'] = $actorId;
+            $alatData['created_at'] = now();
+
+            DB::table('tb_alat_kerja')->insert($alatData);
+
+            return;
+        }
+
+        DB::table('tb_alat_kerja')
+            ->where('id', $alat['id'])
+            ->update($alatData);
+    }
+
+    public static function deleteAlatKerja($alatId)
+    {
+        DB::table('tb_alat_kerja')
+            ->where('id', $alatId)
+            ->delete();
+    }
 }

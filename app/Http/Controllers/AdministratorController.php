@@ -14,8 +14,18 @@ class AdministratorController extends Controller
         return view('administrator.role');
     }
 
+    public function position()
+    {
+        return view('administrator.position');
+    }
+
     public function absen()
     {
         return view('administrator.absen');
+    }
+
+    public function alatKerja()
+    {
+        return view('administrator.alat-kerja');
     }
 }

@@ -134,6 +134,127 @@ class AjaxController extends Controller
         return response()->json(['message' => 'Data role berhasil dihapus.']);
     }
 
+    public function position_list(Request $request)
+    {
+        $table = $this->readDataTableRequest($request, ['name']);
+
+        $result = AdministratorModel::positionList(
+            $table['search'],
+            $table['orderColumn'],
+            $table['orderDirection'],
+            $table['start'],
+            $table['length']
+        );
+
+        return $this->dataTableResponse($table['draw'], $result);
+    }
+
+    public function position_save(Request $request)
+    {
+        $position = $request->validate([
+            'id' => 'nullable|integer|exists:tb_position,id',
+            'name' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('tb_position', 'name')->ignore($request->id),
+            ],
+        ], [
+            'name.required' => 'Nama position wajib diisi!',
+            'name.unique' => 'Nama position sudah ada!',
+        ]);
+
+        AdministratorModel::savePosition($position, Auth::id());
+
+        return response()->json([
+            'message' => 'Data position berhasil disimpan.',
+        ]);
+    }
+
+    public function position_delete(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:tb_position,id',
+        ]);
+
+        AdministratorModel::deletePosition($request->id);
+
+        return response()->json([
+            'message' => 'Data position berhasil dihapus.',
+        ]);
+    }
+
+    
+    public function alatKerja_list(Request $request)
+    {
+        $sortableColumns = [
+            'nik_karyawan',
+            'kode_alat',
+            'nama_alat',
+            'tanggal_penyerahan',
+            'kondisi',
+            'status',
+        ];
+
+        $table = $this->readDataTableRequest($request, $sortableColumns);
+
+        $result = AdministratorModel::alatKerjaList(
+            $table['search'],
+            $table['orderColumn'],
+            $table['orderDirection'],
+            $table['start'],
+            $table['length']
+        );
+
+        return $this->dataTableResponse($table['draw'], $result);
+    }
+
+    public function alatKerja_save(Request $request)
+    {
+        $alat = $request->validate([
+            'id' => 'nullable|integer|exists:tb_alat_kerja,id',
+            'nik_karyawan' => 'required|integer|exists:tb_employee,nik',
+            'kode_alat' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('tb_alat_kerja', 'kode_alat')->ignore($request->id),
+            ],
+            'nama_alat' => 'required|string|max:100',
+            'tanggal_penyerahan' => 'required|date',
+            'kondisi' => 'required|in:Baik,Rusak',
+            'status' => 'required|in:Sudah Dikembalikan,Belum Dikembalikan',
+        ], [
+            'nik_karyawan.required' => 'NIK karyawan wajib diisi!',
+            'nik_karyawan.exists' => 'NIK tidak ditemukan dalam Data Karyawan!',
+            'kode_alat.required' => 'Kode alat wajib diisi!',
+            'kode_alat.unique' => 'Kode alat sudah digunakan!',
+            'nama_alat.required' => 'Nama alat wajib diisi!',
+            'tanggal_penyerahan.required' => 'Tanggal penyerahan wajib diisi!',
+            'kondisi.required' => 'Kondisi alat wajib dipilih!',
+            'status.required' => 'Status pengembalian wajib dipilih!',
+        ]);
+
+        AdministratorModel::saveAlatKerja($alat, Auth::id());
+
+        return response()->json([
+            'message' => 'Data alat kerja berhasil disimpan.',
+        ]);
+    }
+
+    public function alatKerja_delete(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:tb_alat_kerja,id',
+        ]);
+
+        AdministratorModel::deleteAlatKerja($request->id);
+
+        return response()->json([
+            'message' => 'Data alat kerja berhasil dihapus.',
+        ]);
+    }
+
     private function readDataTableRequest(Request $request, array $sortableColumns)
     {
         $request->validate([

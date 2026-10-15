@@ -124,21 +124,6 @@
 
                     <div class="row g-3">
 
-                        {{-- NIK --}}
-                        <div class="col-md-6">
-                            <label for="absenKaryawan" class="form-label">
-                                NIK Karyawan
-                            </label>
-
-                            <input type="text"
-                                name="nik"
-                                id="absenKaryawan"
-                                class="form-control"
-                                value="{{ auth()->user()->nik ?? '' }}"
-                                readonly
-                                required>
-                        </div>
-
                         {{-- JENIS ABSEN --}}
                         <div class="col-md-6">
                             <label for="absenJenis" class="form-label">
@@ -192,21 +177,6 @@
                                 name="nomor_dokumen"
                                 id="nomorDokumen"
                                 class="form-control"
-                                readonly
-                                required>
-                        </div>
-
-                        {{-- STATUS --}}
-                        <div class="col-md-6">
-                            <label for="absenStatus" class="form-label">
-                                Status
-                            </label>
-
-                            <input type="text"
-                                name="status"
-                                id="absenStatus"
-                                class="form-control"
-                                value="Menunggu"
                                 readonly
                                 required>
                         </div>
@@ -312,6 +282,10 @@
             new FormData(form).entries()
         );
 
+        data.nik = @json(auth()->user()->nik ?? '');
+
+        data.status = 'Menunggu';
+
         if (data.tanggal_selesai < data.tanggal_mulai) {
             alert('Tanggal selesai tidak boleh sebelum tanggal mulai.');
             return;
@@ -346,7 +320,7 @@
         const hasil = daftarAbsen
             .map((data, index) => ({ ...data, index }))
             .filter(data =>
-                data.nik.toLowerCase().includes(pencarian) &&
+                String(data.nik ?? '').toLowerCase().includes(pencarian) &&
                 (!jenisFilter || data.jenis === jenisFilter)
             );
 

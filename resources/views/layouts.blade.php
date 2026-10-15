@@ -188,6 +188,16 @@
 
 							<li class="nav-item">
 								<a
+									href="{{ route('administrator.position') }}"
+									class="nav-link {{ request()->routeIs('administrator.position') ? 'active' : '' }}"
+								>
+									<i class="nav-icon bi bi-person-badge"></i>
+									<p>Data Position</p>
+								</a>
+							</li>
+
+							<li class="nav-item">
+								<a
 									href="{{ route('administrator.absen') }}"
 									class="nav-link {{ request()->routeIs('administrator.absen') ? 'active' : '' }}"
 								>
@@ -195,7 +205,16 @@
 									<p>Data Absen</p>
 								</a>
 							</li>
-
+							
+							<li class="nav-item">
+								<a
+									href="{{ route('administrator.alat-kerja') }}"
+									class="nav-link {{ request()->routeIs('administrator.alat-kerja') ? 'active' : '' }}"
+								>
+									<i class="nav-icon bi bi-tools"></i>
+									<p>Data Alat Kerja</p>
+								</a>
+							</li>
 						</ul>
 					</nav>
 				</div>
