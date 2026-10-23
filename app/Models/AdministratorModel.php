@@ -202,27 +202,35 @@ class AdministratorModel
     }
 
     
+    
     public static function alatKerjaList($search, $orderColumn, $orderDirection, $start, $length)
     {
-        $query = DB::table('tb_alat_kerja')->select(
-            'id',
-            'nik_karyawan',
-            'kode_alat',
-            'nama_alat',
-            'tanggal_penyerahan',
-            'kondisi',
-            'status'
-        );
+        $query = DB::table('tb_alat_kerja')
+            ->leftJoin(
+                'tb_employee',
+                'tb_employee.nik',
+                '=',
+                'tb_alat_kerja.nik_karyawan'
+            )
+            ->select(
+                'tb_alat_kerja.id',
+                'tb_alat_kerja.nik_karyawan',
+                DB::raw("CONCAT(COALESCE(tb_employee.name, 'Karyawan tidak ditemukan'),' (',tb_alat_kerja.nik_karyawan,')') as karyawan"),
+                'tb_alat_kerja.kode_alat',
+                'tb_alat_kerja.nama_alat',
+                'tb_alat_kerja.tanggal_penyerahan',
+                'tb_alat_kerja.kondisi'
+            );
 
         $totalRows = DB::table('tb_alat_kerja')->count();
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('nik_karyawan', 'like', '%'.$search.'%')
-                    ->orWhere('kode_alat', 'like', '%'.$search.'%')
-                    ->orWhere('nama_alat', 'like', '%'.$search.'%')
-                    ->orWhere('kondisi', 'like', '%'.$search.'%')
-                    ->orWhere('status', 'like', '%'.$search.'%');
+                $q->where('tb_employee.name', 'like', '%'.$search.'%')
+                    ->orWhere('tb_alat_kerja.nik_karyawan', 'like', '%'.$search.'%')
+                    ->orWhere('tb_alat_kerja.kode_alat', 'like', '%'.$search.'%')
+                    ->orWhere('tb_alat_kerja.nama_alat', 'like', '%'.$search.'%')
+                    ->orWhere('tb_alat_kerja.kondisi', 'like', '%'.$search.'%');
             });
         }
 
@@ -236,15 +244,16 @@ class AdministratorModel
         return compact('totalRows', 'filteredRows', 'rows');
     }
 
+
+
     public static function saveAlatKerja(array $alat, $actorId)
     {
         $alatData = [
-            'nik_karyawan'      => $alat['nik_karyawan'],
-            'kode_alat'         => $alat['kode_alat'],
-            'nama_alat'         => $alat['nama_alat'],
+            'nik_karyawan'       => $alat['nik_karyawan'],
+            'kode_alat'          => $alat['kode_alat'],
+            'nama_alat'          => $alat['nama_alat'],
             'tanggal_penyerahan' => $alat['tanggal_penyerahan'],
             'kondisi'            => $alat['kondisi'],
-            'status'             => $alat['status'],
             'updated_by'         => $actorId,
             'updated_at'         => now(),
         ];

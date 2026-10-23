@@ -80,67 +80,63 @@ $(function () {
                 requestError(xhr);
             }
         },
-        columns: [
-            { data: 'nik_karyawan', defaultContent: '' },
-            { data: 'kode_alat', defaultContent: '' },
-            { data: 'nama_alat', defaultContent: '' },
-            { data: 'tanggal_penyerahan', defaultContent: '' },
-            {
-                data: 'kondisi',
-                render: function (data, type) {
-                    if (type !== 'display') return data;
-                    const color = data === 'Baik' ? 'success' : 'danger';
-                    return '<span class="badge bg-' + color + '">' +
-                        escapeHtml(data) + '</span>';
-                }
-            },
-            {
-                data: 'status',
-                render: function (data, type) {
-                    if (type !== 'display') return data;
-                    const color = data === 'Sudah Dikembalikan'
-                        ? 'success' : 'warning text-dark';
-                    return '<span class="badge bg-' + color + '">' +
-                        escapeHtml(data) + '</span>';
-                }
-            },
-            {
-                data: null,
-                orderable: false,
-                searchable: false,
-                className: 'text-end text-nowrap',
-                render: function (data, type, row) {
-                    if (type !== 'display') return '';
-                    return `
-                        <button type="button" class="btn btn-sm btn-warning btn-edit-alat"
-                            data-id="${row.id}" title="Edit">
-                            <i class="bi bi-pencil-square"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-danger btn-delete-alat"
-                            data-id="${row.id}" data-name="${escapeHtml(row.nama_alat)}"
-                            title="Hapus">
-                            <i class="bi bi-trash"></i>
-                        </button>`;
-                }
+            columns: [
+        {data: 'karyawan',defaultContent: '-'},
+        {data: 'kode_alat',defaultContent: ''},
+        {data: 'nama_alat',defaultContent: ''},
+        {data: 'tanggal_penyerahan',defaultContent: ''},
+        {data: 'kondisi',
+            render: function(data, type) {
+                if (type !== 'display') return data;
+
+                const color = data === 'Baik' ? 'success' : 'danger';
+
+                return '<span class="badge bg-' + color + '">' +
+                    escapeHtml(data) +
+                    '</span>';
             }
-        ],
-        order: [[0, 'asc']],
-        language: {
-            processing: 'Memuat data...',
-            search: 'Cari:',
-            lengthMenu: 'Tampilkan _MENU_ data',
-            info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
-            infoEmpty: 'Belum ada data',
-            zeroRecords: 'Data tidak ditemukan',
-            emptyTable: 'Belum ada data alat kerja',
-            paginate: {
-                first: 'Pertama',
-                last: 'Terakhir',
-                next: 'Berikutnya',
-                previous: 'Sebelumnya'
+        },
+        {data: null,
+            orderable: false,
+            searchable: false,
+            className: 'text-end text-nowrap',
+            render: function(data, type, row) {
+                if (type !== 'display') return '';
+
+                return `
+                    <button type="button"
+                        class="btn btn-sm btn-warning btn-edit-alat"
+                        title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button"
+                        class="btn btn-sm btn-danger btn-delete-alat"
+                        data-id="${row.id}"
+                        data-name="${escapeHtml(row.nama_alat)}"
+                        title="Hapus">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
             }
         }
-    });
+    ],
+            order: [[0, 'asc']],
+            language: {
+                processing: 'Memuat data...',
+                search: 'Cari:',
+                lengthMenu: 'Tampilkan _MENU_ data',
+                info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
+                infoEmpty: 'Belum ada data',
+                zeroRecords: 'Data tidak ditemukan',
+                emptyTable: 'Belum ada data alat kerja',        
+                paginate: {
+                    first: '«',
+                    previous: '‹',
+                    next: '›',
+                    last: '»'
+                }
+            }
+        });
 
     $('#btn-add-alat-kerja').on('click', function () {
         resetForm();
@@ -158,13 +154,11 @@ $(function () {
 
         $('#alat-kerja-form-title').text('Edit Alat Kerja');
         $('#alat-id').val(row.id);
-        $('#alat-nik').val(row.nik_karyawan);
         $('#alat-kode').val(row.kode_alat);
         $('#alat-nama').val(row.nama_alat);
         $('#alat-tanggal').val(row.tanggal_penyerahan);
         $('#alat-kondisi').val(row.kondisi);
-        $('#alat-status').val(row.status);
-
+        
         formModal.show();
     });
 

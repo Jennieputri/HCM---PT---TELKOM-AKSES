@@ -28,4 +28,12 @@ class AdministratorController extends Controller
     {
         return view('administrator.alat-kerja');
     }
+
+    public function sto()
+    {
+        $data = \App\Models\Sto::orderBy('kode_sto')->get();
+
+        return view('administrator.sto', compact('data'));
+    }
+
 }

@@ -23,9 +23,13 @@
 			rel="stylesheet"
 			href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
 		/>
+		
 		<link rel="stylesheet" href="{{ asset("assets/css/adminlte.min.css") }}" />
 		<link rel="stylesheet" href="{{ asset("assets/css/hcm.css") }}" />
-	</head>
+
+		{{-- CSS tambahan dari setiap halaman --}}
+		@stack("styles")
+		</head>
 
 	<body class="layout-fixed sidebar-expand-lg">
 		<div class="app-wrapper">
@@ -215,6 +219,17 @@
 									<p>Data Alat Kerja</p>
 								</a>
 							</li>
+							
+							<li class="nav-item">
+								<a
+									href="{{ route('administrator.sto') }}"
+									class="nav-link {{ request()->routeIs('administrator.sto') ? 'active' : '' }}"
+								>
+									<i class="nav-icon bi bi-geo-alt"></i>
+									<p>Data STO Map</p>
+								</a>
+							</li>
+
 						</ul>
 					</nav>
 				</div>

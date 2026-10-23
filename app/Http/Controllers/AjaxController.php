@@ -6,6 +6,7 @@ use App\Models\AdministratorModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use App\Models\Sto;
 
 class AjaxController extends Controller
 {
@@ -213,7 +214,6 @@ class AjaxController extends Controller
     {
         $alat = $request->validate([
             'id' => 'nullable|integer|exists:tb_alat_kerja,id',
-            'nik_karyawan' => 'required|integer|exists:tb_employee,nik',
             'kode_alat' => [
                 'required',
                 'string',
@@ -223,17 +223,14 @@ class AjaxController extends Controller
             'nama_alat' => 'required|string|max:100',
             'tanggal_penyerahan' => 'required|date',
             'kondisi' => 'required|in:Baik,Rusak',
-            'status' => 'required|in:Sudah Dikembalikan,Belum Dikembalikan',
         ], [
-            'nik_karyawan.required' => 'NIK karyawan wajib diisi!',
-            'nik_karyawan.exists' => 'NIK tidak ditemukan dalam Data Karyawan!',
             'kode_alat.required' => 'Kode alat wajib diisi!',
             'kode_alat.unique' => 'Kode alat sudah digunakan!',
             'nama_alat.required' => 'Nama alat wajib diisi!',
             'tanggal_penyerahan.required' => 'Tanggal penyerahan wajib diisi!',
             'kondisi.required' => 'Kondisi alat wajib dipilih!',
-            'status.required' => 'Status pengembalian wajib dipilih!',
         ]);
+        $alat['nik_karyawan'] = Auth::user()->nik;
 
         AdministratorModel::saveAlatKerja($alat, Auth::id());
 
@@ -241,6 +238,7 @@ class AjaxController extends Controller
             'message' => 'Data alat kerja berhasil disimpan.',
         ]);
     }
+
 
     public function alatKerja_delete(Request $request)
     {
@@ -285,6 +283,58 @@ class AjaxController extends Controller
             'recordsTotal'    => $result['totalRows'],
             'recordsFiltered' => $result['filteredRows'],
             'data'            => $result['rows'],
+        ]);
+    }
+
+    
+    public function sto_list()
+    {
+        $data = Sto::orderBy('kode_sto')->get();
+
+        return response()->json([
+            'data' => $data
+        ]);
+    }
+
+    public function sto_save(\Illuminate\Http\Request $request)
+    {
+        $id = $request->input('id');
+
+        $validated = $request->validate([
+            'kode_sto' => 'required|string|max:20|unique:tb_sto,kode_sto,' . ($id ?? 'NULL') . ',id',
+            'nama_sto' => 'required|string|max:100',
+            'alamat' => 'required|string|max:255',
+            'kecamatan' => 'nullable|string|max:100',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'status' => 'required|in:Aktif,Nonaktif',
+        ]);
+
+        if ($id) {
+            $sto = Sto::findOrFail($id);
+            $sto->update($validated);
+        } else {
+            $sto = Sto::create($validated);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data STO berhasil disimpan.',
+            'data' => $sto
+        ]);
+    }
+
+    public function sto_delete(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:tb_sto,id',
+        ]);
+
+        Sto::findOrFail($request->id)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data STO berhasil dihapus.'
         ]);
     }
 }

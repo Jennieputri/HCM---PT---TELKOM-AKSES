@@ -10,19 +10,19 @@
         <div class="card border-0 shadow-sm"
              style="border-radius: 16px; overflow: hidden;">
 
-            {{-- HEADER DAFTAR ABSEN --}}
             <div class="card-header bg-white py-4">
-                <h4 class="mb-3 fw-bold">Daftar Data Absen</h4>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 fw-bold">Daftar Data Absen</h4>
 
-                {{-- Tombol berada di pojok kiri --}}
-                <button type="button"
-                        class="btn btn-danger"
-                        onclick="formAbsenBaru()">
-                    <i class="bi bi-plus-lg me-1"></i>
-                    Tambah Absen
-                </button>
+                    <button type="button"
+                            class="btn btn-danger"
+                            onclick="formAbsenBaru()">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Tambah Absen
+                    </button>
+                </div>
             </div>
-
+            
             <div class="card-body">
 
                 {{-- FILTER --}}
@@ -77,7 +77,6 @@
                                 <td colspan="9"
                                     class="text-center text-muted py-4">
                                     Belum ada data absen.
-                                    Silakan tambahkan data.
                                 </td>
                             </tr>
                         </tbody>

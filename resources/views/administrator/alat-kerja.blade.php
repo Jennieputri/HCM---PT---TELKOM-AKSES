@@ -38,12 +38,11 @@
                 >
                     <thead class="table-light">
                         <tr>
-                            <th>NIK Karyawan</th>
+                            <th>Karyawan</th>
                             <th>Kode Alat</th>
                             <th>Nama Alat</th>
                             <th>Tanggal Penyerahan</th>
                             <th>Kondisi</th>
-                            <th>Status</th>
                             <th class="text-end">Aksi</th>
                         </tr>
                     </thead>
@@ -70,11 +69,6 @@
                     <input type="hidden" name="id" id="alat-id">
 
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="alat-nik" class="form-label">NIK Karyawan</label>
-                            <input type="number" class="form-control" name="nik_karyawan" id="alat-nik" required>
-                            <div class="invalid-feedback" data-error="nik_karyawan"></div>
-                        </div>
 
                         <div class="col-md-6">
                             <label for="alat-kode" class="form-label">Kode Alat</label>
@@ -102,16 +96,6 @@
                                 <option value="Rusak">Rusak</option>
                             </select>
                             <div class="invalid-feedback" data-error="kondisi"></div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="alat-status" class="form-label">Status Pengembalian</label>
-                            <select class="form-select" name="status" id="alat-status" required>
-                                <option value="">-- Pilih Status --</option>
-                                <option value="Belum Dikembalikan">Belum Dikembalikan</option>
-                                <option value="Sudah Dikembalikan">Sudah Dikembalikan</option>
-                            </select>
-                            <div class="invalid-feedback" data-error="status"></div>
                         </div>
                     </div>
                 </div>

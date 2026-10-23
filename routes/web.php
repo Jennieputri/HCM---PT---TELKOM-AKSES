@@ -31,6 +31,9 @@ Route::middleware('auth')->group(function ()
 
     Route::get('administrator/alat-kerja', [AdministratorController::class, 'alatKerja'])
     ->name('administrator.alat-kerja');
+
+    Route::get('administrator/sto', [AdministratorController::class, 'sto'])
+    ->name('administrator.sto');
 });
 
 Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(function ()
@@ -51,5 +54,9 @@ Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(
     Route::post('alat-kerja/list', [AjaxController::class, 'alatKerja_list'])->name('alat-kerja.list');
     Route::post('alat-kerja/save', [AjaxController::class, 'alatKerja_save'])->name('alat-kerja.save');
     Route::post('alat-kerja/delete', [AjaxController::class, 'alatKerja_delete'])->name('alat-kerja.delete');
+
+    Route::post('sto/save', [AjaxController::class, 'sto_save'])->name('sto.save');
+    Route::post('sto/delete', [AjaxController::class, 'sto_delete'])->name('sto.delete');
+    Route::post('sto/list', [AjaxController::class, 'sto_list'])->name('sto.list');
 
 });
