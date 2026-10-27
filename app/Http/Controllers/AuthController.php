@@ -52,7 +52,7 @@ class AuthController extends Controller
 
         if ((int) $employee->status !== AuthModel::STATUS_ACTIVE)
         {
-            return back()->withErrors(['login' => 'Akun Anda tidak aktif!'])->onlyInput('nik');
+            return back()->withErrors(['login' => $this->inactiveAccountMessage((int) $employee->status)])->onlyInput('nik');
         }
 
         RateLimiter::clear($loginLockKey);
@@ -90,7 +90,17 @@ class AuthController extends Controller
 
         AuthModel::register($request->nik, $request->name, $request->password);
 
-        return redirect()->route('login')->with('success', 'Pendaftaran berhasil, silakan login.');
+        return redirect()->route('login')->with('success', 'Pendaftaran berhasil. Akun Anda menunggu persetujuan HCM sebelum bisa login.');
+    }
+
+    private function inactiveAccountMessage(int $status)
+    {
+        return match ($status)
+        {
+            AuthModel::STATUS_PENDING  => 'Akun Anda masih menunggu persetujuan HCM.',
+            AuthModel::STATUS_REJECTED => 'Pendaftaran akun Anda ditolak. Silakan hubungi HCM.',
+            default                    => 'Akun Anda tidak aktif!',
+        };
     }
 
     public function logout(Request $request)

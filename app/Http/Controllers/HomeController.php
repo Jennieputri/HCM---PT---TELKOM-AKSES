@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\HomeModel;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
     public function index()
     {
-        $employee             = Auth::user();
-        $totalActiveEmployees = HomeModel::totalActiveEmployees();
+        $employee = Auth::user();
+        $isHcm    = $employee->isHcm();
 
-        return view('home', compact('employee', 'totalActiveEmployees'));
+        return view('home', compact('employee', 'isHcm'));
     }
 }

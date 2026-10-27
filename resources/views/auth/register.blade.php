@@ -47,7 +47,7 @@
 
 					@include("partials.alerts")
 
-					<form action="{{ route("register.submit") }}" method="POST" novalidate>
+					<form id="register-form" action="{{ route("register.submit") }}" method="POST" novalidate>
 						@csrf
 
 						<div class="form-group">
@@ -95,8 +95,8 @@
 
 								<input type="password" id="password" name="password" placeholder="Masukkan Password" minlength="8" required />
 
-								<button type="button" class="password-button" onclick="toggleRegisterPassword()">
-									<i class="bi bi-eye" id="registerEyeIcon"></i>
+								<button type="button" class="password-button" aria-label="Tampilkan password">
+									<i class="bi bi-eye" aria-hidden="true"></i>
 								</button>
 							</div>
 						</div>
@@ -139,119 +139,7 @@
 			</div>
 		</div>
 
-		<script>
-			function toggleRegisterPassword() {
-				const password = document.getElementById('password');
-
-				const eyeIcon = document.getElementById('registerEyeIcon');
-
-				if (password.type === 'password') {
-					password.type = 'text';
-
-					eyeIcon.classList.remove('bi-eye');
-
-					eyeIcon.classList.add('bi-eye-slash');
-				} else {
-					password.type = 'password';
-
-					eyeIcon.classList.remove('bi-eye-slash');
-
-					eyeIcon.classList.add('bi-eye');
-				}
-			}
-		</script>
-
-		<style>
-			.input-error {
-				border: 2px solid #dc3545 !important;
-				outline: none !important;
-				box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12) !important;
-				border-radius: 12px !important;
-				box-sizing: border-box;
-				width: 100%;
-			}
-
-			input.input-error::placeholder {
-				color: #dc3545 !important;
-				opacity: 1;
-			}
-
-			.input-group-custom.input-error {
-				border: 2px solid #dc3545 !important;
-				border-radius: 12px !important;
-				box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12) !important;
-				overflow: hidden;
-			}
-
-			.input-group-custom.input-error input {
-				border: none !important;
-				box-shadow: none !important;
-				outline: none !important;
-			}
-		</style>
-
-		<script>
-			document.addEventListener('DOMContentLoaded', function () {
-				const nik = document.getElementById('nik');
-				const password = document.getElementById('password');
-
-				if (!nik || !password) return;
-
-				const form = nik.closest('form');
-
-				if (!form) return;
-
-				function showError(input, message) {
-					input.value = '';
-					input.placeholder = message;
-					input.classList.add('input-error');
-
-					const wrapper = input.closest('.input-group-custom');
-					if (wrapper) {
-						wrapper.classList.add('input-error');
-					}
-				}
-
-				function clearError(input, placeholder) {
-					input.classList.remove('input-error');
-					input.placeholder = placeholder;
-
-					const wrapper = input.closest('.input-group-custom');
-					if (wrapper) {
-						wrapper.classList.remove('input-error');
-					}
-				}
-
-				form.addEventListener('submit', function (event) {
-					let hasError = false;
-
-					if (!/^[0-9]+$/.test(nik.value)) {
-						showError(nik, 'NIK harus berupa angka!');
-						hasError = true;
-					}
-
-					if (password.value.length < 8) {
-						showError(password, 'Password minimal 8 karakter!');
-						hasError = true;
-					}
-
-					if (hasError) {
-						event.preventDefault();
-					}
-				});
-
-				nik.addEventListener('input', function () {
-					if (this.classList.contains('input-error')) {
-						clearError(this, 'Masukkan NIK');
-					}
-				});
-
-				password.addEventListener('input', function () {
-					if (this.classList.contains('input-error')) {
-						clearError(this, 'Masukkan Password');
-					}
-				});
-			});
-		</script>
+		<script src="{{ asset("assets/js/pages/auth-password-toggle.js") }}"></script>
+		<script src="{{ asset("assets/js/pages/auth-register.js") }}"></script>
 	</body>
 </html>

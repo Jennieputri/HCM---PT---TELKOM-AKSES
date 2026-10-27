@@ -23,13 +23,12 @@
 			rel="stylesheet"
 			href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
 		/>
-		
+
 		<link rel="stylesheet" href="{{ asset("assets/css/adminlte.min.css") }}" />
 		<link rel="stylesheet" href="{{ asset("assets/css/hcm.css") }}" />
 
-		{{-- CSS tambahan dari setiap halaman --}}
 		@stack("styles")
-		</head>
+	</head>
 
 	<body class="layout-fixed sidebar-expand-lg">
 		<div class="app-wrapper">
@@ -140,20 +139,17 @@
 					</ul>
 				</div>
 			</nav>
-			
+
 			<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
 				<div class="sidebar-brand">
-					<a href="{{ route('home') }}" class="brand-link">
+					<a href="{{ route("home") }}" class="brand-link">
 						<span class="brand-logo-box">
-							<img
-								src="{{ asset('logo-icon.png') }}"
-								alt="Logo Telkom Akses"
-								class="brand-image"
-							>
+							<img src="{{ asset("logo-icon.png") }}" alt="Logo Telkom Akses" class="brand-image" />
 						</span>
 
 						<span class="brand-text">
-							<strong>HCM</strong> Telkom Akses
+							<strong>HCM</strong>
+							Telkom Akses
 						</span>
 					</a>
 				</div>
@@ -168,68 +164,88 @@
 								</a>
 							</li>
 
-							<li class="nav-header">ADMINISTRATOR</li>
+							<li class="nav-header">OPERASIONAL</li>
 
 							<li class="nav-item">
 								<a
-									href="{{ route("administrator.employee") }}"
-									class="nav-link {{ request()->routeIs("administrator.employee") ? "active" : "" }}"
-								>
-									<i class="nav-icon bi bi-people"></i>
-									<p>Data Karyawan</p>
-								</a>
-							</li>
-
-							<li class="nav-item">
-								<a
-									href="{{ route("administrator.role") }}"
-									class="nav-link {{ request()->routeIs("administrator.role") ? "active" : "" }}"
-								>
-									<i class="nav-icon bi bi-shield-lock"></i>
-									<p>Data Role</p>
-								</a>
-							</li>
-
-							<li class="nav-item">
-								<a
-									href="{{ route('administrator.position') }}"
-									class="nav-link {{ request()->routeIs('administrator.position') ? 'active' : '' }}"
-								>
-									<i class="nav-icon bi bi-person-badge"></i>
-									<p>Data Position</p>
-								</a>
-							</li>
-
-							<li class="nav-item">
-								<a
-									href="{{ route('administrator.absen') }}"
-									class="nav-link {{ request()->routeIs('administrator.absen') ? 'active' : '' }}"
+									href="{{ route("operasional.absen") }}"
+									class="nav-link {{ request()->routeIs("operasional.absen") ? "active" : "" }}"
 								>
 									<i class="nav-icon bi bi-calendar2-check"></i>
 									<p>Data Absen</p>
 								</a>
 							</li>
-							
+
 							<li class="nav-item">
 								<a
-									href="{{ route('administrator.alat-kerja') }}"
-									class="nav-link {{ request()->routeIs('administrator.alat-kerja') ? 'active' : '' }}"
+									href="{{ route("operasional.alat-kerja") }}"
+									class="nav-link {{ request()->routeIs("operasional.alat-kerja") ? "active" : "" }}"
 								>
 									<i class="nav-icon bi bi-tools"></i>
 									<p>Data Alat Kerja</p>
 								</a>
 							</li>
-							
+
 							<li class="nav-item">
 								<a
-									href="{{ route('administrator.sto') }}"
-									class="nav-link {{ request()->routeIs('administrator.sto') ? 'active' : '' }}"
+									href="{{ route("operasional.sto") }}"
+									class="nav-link {{ request()->routeIs("operasional.sto") ? "active" : "" }}"
 								>
 									<i class="nav-icon bi bi-geo-alt"></i>
-									<p>Data STO Map</p>
+									<p>Data STO</p>
 								</a>
 							</li>
 
+							@if ($isHcm)
+								<li class="nav-header">ADMINISTRATOR</li>
+
+								<li class="nav-item">
+									<a
+										href="{{ route("administrator.approval") }}"
+										class="nav-link {{ request()->routeIs("administrator.approval") ? "active" : "" }}"
+									>
+										<i class="nav-icon bi bi-person-check"></i>
+										<p>
+											Persetujuan Akun
+											@if ($pendingApprovalCount > 0)
+												<span class="nav-badge" aria-label="{{ $pendingApprovalCount }} akun menunggu persetujuan">
+													{{ $pendingApprovalCount }}
+												</span>
+											@endif
+										</p>
+									</a>
+								</li>
+
+								<li class="nav-item">
+									<a
+										href="{{ route("administrator.employee") }}"
+										class="nav-link {{ request()->routeIs("administrator.employee") ? "active" : "" }}"
+									>
+										<i class="nav-icon bi bi-people"></i>
+										<p>Data Karyawan</p>
+									</a>
+								</li>
+
+								<li class="nav-item">
+									<a
+										href="{{ route("administrator.role") }}"
+										class="nav-link {{ request()->routeIs("administrator.role") ? "active" : "" }}"
+									>
+										<i class="nav-icon bi bi-shield-lock"></i>
+										<p>Data Role</p>
+									</a>
+								</li>
+
+								<li class="nav-item">
+									<a
+										href="{{ route("administrator.position") }}"
+										class="nav-link {{ request()->routeIs("administrator.position") ? "active" : "" }}"
+									>
+										<i class="nav-icon bi bi-person-badge"></i>
+										<p>Data Position</p>
+									</a>
+								</li>
+							@endif
 						</ul>
 					</nav>
 				</div>
@@ -271,6 +287,33 @@
 				<strong>&copy; {{ date("Y") }} PT. Telkom Akses Branch Palangkaraya</strong>
 			</footer>
 		</div>
+
+		<aside
+			class="offcanvas offcanvas-end record-detail"
+			tabindex="-1"
+			id="record-detail-panel"
+			aria-labelledby="record-detail-title"
+		>
+			<div class="offcanvas-header">
+				<div>
+					<p class="record-detail-eyebrow">Detail Data</p>
+					<h5 class="offcanvas-title" id="record-detail-title"></h5>
+				</div>
+				<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
+			</div>
+
+			<div class="offcanvas-body">
+				<section class="record-detail-section">
+					<h6 class="record-detail-heading">Informasi</h6>
+					<dl class="record-detail-list" id="record-detail-list"></dl>
+				</section>
+
+				<section class="record-detail-section" id="record-detail-audit">
+					<h6 class="record-detail-heading">Riwayat Data</h6>
+					<dl class="record-detail-list" id="record-detail-audit-list"></dl>
+				</section>
+			</div>
+		</aside>
 
 		<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>

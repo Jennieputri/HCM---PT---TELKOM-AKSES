@@ -86,8 +86,8 @@
 									required
 								/>
 
-								<button type="button" class="password-button" onclick="togglePassword()">
-									<i class="bi bi-eye" id="eyeIcon"></i>
+								<button type="button" class="password-button" aria-label="Tampilkan password">
+									<i class="bi bi-eye" aria-hidden="true"></i>
 								</button>
 							</div>
 						</div>
@@ -112,25 +112,6 @@
 			</div>
 		</div>
 
-		<script>
-			function togglePassword() {
-				const password = document.getElementById('password');
-				const eyeIcon = document.getElementById('eyeIcon');
-
-				if (password.type === 'password') {
-					password.type = 'text';
-
-					eyeIcon.classList.remove('bi-eye');
-
-					eyeIcon.classList.add('bi-eye-slash');
-				} else {
-					password.type = 'password';
-
-					eyeIcon.classList.remove('bi-eye-slash');
-
-					eyeIcon.classList.add('bi-eye');
-				}
-			}
-		</script>
+		<script src="{{ asset("assets/js/pages/auth-password-toggle.js") }}"></script>
 	</body>
 </html>

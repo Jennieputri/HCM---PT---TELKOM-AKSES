@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 class AdministratorController extends Controller
 {
+    public function approval()
+    {
+        return view('administrator.approval');
+    }
+
     public function employee()
     {
         return view('administrator.employee');
@@ -18,22 +23,4 @@ class AdministratorController extends Controller
     {
         return view('administrator.position');
     }
-
-    public function absen()
-    {
-        return view('administrator.absen');
-    }
-
-    public function alatKerja()
-    {
-        return view('administrator.alat-kerja');
-    }
-
-    public function sto()
-    {
-        $data = \App\Models\Sto::orderBy('kode_sto')->get();
-
-        return view('administrator.sto', compact('data'));
-    }
-
 }

@@ -2,23 +2,32 @@ $(function ()
 {
     var $page = $('#role-page');
     var $form = $('#role-form');
+    var $filterPanel = $('#role-filter-panel');
     var formModal = new bootstrap.Modal('#role-form-modal');
     var deleteModal = new bootstrap.Modal('#role-delete-modal');
     var roleIdToDelete = null;
 
     var roleTable = $('#role-table').DataTable(
     {
-        ajax:
-        {
-            url: $page.data('list-url'),
-            type: 'POST'
-        },
+        ajax: filteredDataTableAjax($page.data('list-url'), $filterPanel),
         columns:
         [
             { data: 'name', render: DataTable.render.text() },
+            { data: 'created_by_label', render: DataTable.render.text(), defaultContent: '-' },
+            { data: 'updated_at', render: renderDateTime },
             { data: null, orderable: false, className: 'text-end', render: renderActionButtons }
         ]
     });
+
+    bindFilterPanel($filterPanel, function ()
+    {
+        roleTable.ajax.reload();
+    });
+
+    function rowData(button)
+    {
+        return roleTable.row($(button).closest('tr')).data();
+    }
 
     function openFormModal(title)
     {
@@ -36,9 +45,16 @@ $(function ()
         openFormModal('Tambah Role');
     });
 
+    $('#role-table').on('click', '.btn-detail', function ()
+    {
+        var role = rowData(this);
+
+        showRecordDetail(role.name, [['Nama Role', role.name]], role);
+    });
+
     $('#role-table').on('click', '.btn-edit', function ()
     {
-        var role = roleTable.row($(this).closest('tr')).data();
+        var role = rowData(this);
 
         openFormModal('Ubah Role');
 
@@ -72,7 +88,7 @@ $(function ()
 
     $('#role-table').on('click', '.btn-delete', function ()
     {
-        var role = roleTable.row($(this).closest('tr')).data();
+        var role = rowData(this);
 
         roleIdToDelete = role.id;
         $('#role-delete-name').text(role.name);
@@ -82,17 +98,28 @@ $(function ()
 
     $('#btn-confirm-delete-role').on('click', function ()
     {
-        deleteModal.hide();
+        if (roleIdToDelete === null)
+        {
+            return;
+        }
+
+        var $button = $(this).prop('disabled', true);
 
         $.post($page.data('delete-url'), { id: roleIdToDelete })
             .done(function (response)
             {
+                deleteModal.hide();
                 showMessage(response.message, 'success');
+                roleIdToDelete = null;
                 roleTable.ajax.reload(null, false);
             })
             .fail(function (xhr)
             {
                 showMessage(readErrorMessage(xhr), 'error');
+            })
+            .always(function ()
+            {
+                $button.prop('disabled', false);
             });
     });
 });

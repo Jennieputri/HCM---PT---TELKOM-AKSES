@@ -2,6 +2,7 @@ $(function ()
 {
     var $page = $('#employee-page');
     var $form = $('#employee-form');
+    var $filterPanel = $('#employee-filter-panel');
     var formModal = new bootstrap.Modal('#employee-form-modal');
     var deleteModal = new bootstrap.Modal('#employee-delete-modal');
     var $roleSelect = $('#employee-role');
@@ -9,31 +10,31 @@ $(function ()
     var employeeFieldNames = ['id', 'nik', 'name', 'number_phone', 'email', 'address', 'status'];
     var employeeIdToDelete = null;
 
+    var employeeStatuses =
+    {
+        0: { label: 'Nonaktif', tone: 'muted' },
+        1: { label: 'Aktif', tone: 'success' },
+        2: { label: 'Menunggu Persetujuan', tone: 'warning' },
+        3: { label: 'Ditolak', tone: 'danger' }
+    };
+
     var employeeTable = $('#employee-table').DataTable(
     {
-        ajax:
-        {
-            url: $page.data('list-url'),
-            type: 'POST'
-        },
+        ajax: filteredDataTableAjax($page.data('list-url'), $filterPanel),
         columns:
         [
-            { data: 'nik', type: 'string', render: DataTable.render.text() },
-            { data: 'name', render: DataTable.render.text() },
+            { data: 'employee_label', render: DataTable.render.text() },
             { data: 'email', render: DataTable.render.text(), defaultContent: '-' },
             { data: 'number_phone', render: DataTable.render.text(), defaultContent: '-' },
             { data: 'role_name', render: DataTable.render.text(), defaultContent: '-' },
-            { data: 'status', render: renderStatusBadge },
+            { data: 'status', render: renderStatus },
             { data: null, orderable: false, className: 'text-end', render: renderActionButtons }
         ]
     });
 
-    $roleSelect.select2(
+    function roleOptionsAjax()
     {
-        placeholder: 'Pilih role',
-        dropdownParent: $('#employee-form-modal'),
-        ajax:
-        {
+        return {
             url: $page.data('role-options-url'),
             type: 'POST',
             delay: 300,
@@ -41,23 +42,46 @@ $(function ()
             {
                 return { search: params.term, page: params.page || 1 };
             }
-        }
-    });
+        };
+    }
 
-    $statusSelect.select2(
+    $roleSelect.select2(
     {
+        placeholder: 'Pilih role',
         dropdownParent: $('#employee-form-modal'),
-        minimumResultsForSearch: Infinity
+        ajax: roleOptionsAjax()
     });
 
-    function renderStatusBadge(status)
+    $('#employee-filter-role').select2(
     {
-        if (Number(status) === 1)
-        {
-            return '<span class="badge text-bg-success">Aktif</span>';
-        }
+        placeholder: 'Semua role',
+        allowClear: true,
+        ajax: roleOptionsAjax()
+    });
 
-        return '<span class="badge text-bg-secondary">Nonaktif</span>';
+    bindFilterPanel($filterPanel, function ()
+    {
+        employeeTable.ajax.reload();
+    });
+
+    function employeeStatus(status)
+    {
+        return employeeStatuses[Number(status)] || employeeStatuses[0];
+    }
+
+    function statusLabel(status)
+    {
+        return employeeStatus(status).label;
+    }
+
+    function renderStatus(status)
+    {
+        return renderStatusPill(statusLabel(status), employeeStatus(status).tone);
+    }
+
+    function rowData(button)
+    {
+        return employeeTable.row($(button).closest('tr')).data();
     }
 
     function openFormModal(title, isNewEmployee)
@@ -79,9 +103,25 @@ $(function ()
         openFormModal('Tambah Karyawan', true);
     });
 
+    $('#employee-table').on('click', '.btn-detail', function ()
+    {
+        var employee = rowData(this);
+
+        showRecordDetail(employee.employee_label,
+        [
+            ['NIK', employee.nik],
+            ['Nama', employee.name],
+            ['Email', employee.email],
+            ['No. HP', employee.number_phone],
+            ['Alamat', employee.address],
+            ['Role', employee.role_name],
+            ['Status', statusLabel(employee.status)]
+        ], employee);
+    });
+
     $('#employee-table').on('click', '.btn-edit', function ()
     {
-        var employee = employeeTable.row($(this).closest('tr')).data();
+        var employee = rowData(this);
 
         openFormModal('Ubah Karyawan', false);
 
@@ -125,10 +165,10 @@ $(function ()
 
     $('#employee-table').on('click', '.btn-delete', function ()
     {
-        var employee = employeeTable.row($(this).closest('tr')).data();
+        var employee = rowData(this);
 
         employeeIdToDelete = employee.id;
-        $('#employee-delete-name').text(employee.name);
+        $('#employee-delete-name').text(employee.employee_label);
 
         deleteModal.show();
     });
