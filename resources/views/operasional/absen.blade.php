@@ -9,7 +9,7 @@
 				<div class="table-card-header">
 					<div>
 						<h3 class="card-title">Daftar Absen</h3>
-						<p class="table-card-subtitle">Data izin, sakit, dan cuti karyawan.</p>
+						<p class="table-card-subtitle">Data SPPD, sakit, dan cuti karyawan.</p>
 					</div>
 
 					<div class="table-card-actions">
@@ -53,7 +53,7 @@
 							<label for="absen-filter-jenis" class="form-label">Jenis</label>
 							<select class="form-select" id="absen-filter-jenis" name="jenis" data-filter>
 								<option value="">Semua</option>
-								<option value="Izin">Izin</option>
+								<option value="SPPD">SPPD</option>
 								<option value="Sakit">Sakit</option>
 								<option value="Cuti">Cuti</option>
 							</select>
@@ -138,7 +138,7 @@
 								<label for="absen-jenis" class="form-label">Jenis Absen</label>
 								<select class="form-select" id="absen-jenis" name="jenis" required>
 									<option value="">Pilih jenis</option>
-									<option value="Izin">Izin</option>
+									<option value="SPPD">SPPD</option>
 									<option value="Sakit">Sakit</option>
 									<option value="Cuti">Cuti</option>
 								</select>
@@ -170,7 +170,7 @@
 									name="keterangan"
 									rows="3"
 									maxlength="1000"
-									placeholder="Masukkan keterangan izin, sakit, atau cuti"
+									placeholder="Masukkan keterangan SPPD, sakit, atau cuti"
 									required
 								></textarea>
 								<div class="invalid-feedback"></div>

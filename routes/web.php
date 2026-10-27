@@ -63,6 +63,10 @@ Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(
 
     Route::prefix('operasional')->name('operasional.')->group(function ()
     {
+        Route::post('absen/list', [AjaxController::class, 'absen_list'])->name('absen.list');
+        Route::post('absen/save', [AjaxController::class, 'absen_save'])->name('absen.save');
+        Route::post('absen/delete', [AjaxController::class, 'absen_delete'])->name('absen.delete');
+
         Route::post('alat-kerja/list', [AjaxController::class, 'alat_kerja_list'])->name('alat-kerja.list');
         Route::post('alat-kerja/save', [AjaxController::class, 'alat_kerja_save'])->name('alat-kerja.save');
         Route::post('alat-kerja/delete', [AjaxController::class, 'alat_kerja_delete'])->name('alat-kerja.delete');

@@ -70,6 +70,28 @@
 						</div>
 
 						<div class="form-group">
+							<label for="no_ktp">Nomor KTP</label>
+
+							<div class="input-group-custom">
+								<i class="bi bi-person-vcard"></i>
+
+								<input
+									type="text"
+									id="no_ktp"
+									name="no_ktp"
+									value="{{ old("no_ktp") }}"
+									placeholder="Masukkan 16 digit Nomor KTP"
+									inputmode="numeric"
+									minlength="16"
+									maxlength="16"
+									pattern="[0-9]{16}"
+									autocomplete="off"
+									required
+								/>
+							</div>
+						</div>
+
+						<div class="form-group">
 							<label for="name">Nama Lengkap</label>
 
 							<div class="input-group-custom">

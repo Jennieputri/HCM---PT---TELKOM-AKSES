@@ -25,6 +25,7 @@ class AuthModel extends Authenticatable
     protected $fillable = [
         'role_id',
         'nik',
+        'no_ktp',
         'name',
         'password',
         'status',
@@ -47,11 +48,14 @@ class AuthModel extends Authenticatable
         return self::where('nik', $nik)->exists();
     }
 
-    public static function register($nik, $name, $password)
+    public static function register($nik, $no_ktp, $name, $password)
     {
         return self::create([
-            'role_id'  => DB::table('tb_role')->where('name', self::ROLE_USER)->value('id'),
+            'role_id'  => DB::table('tb_role')
+                ->where('name', self::ROLE_USER)
+                ->value('id'),
             'nik'      => $nik,
+            'no_ktp'   => $no_ktp,
             'name'     => $name,
             'password' => Hash::make($password),
             'status'   => self::STATUS_PENDING,

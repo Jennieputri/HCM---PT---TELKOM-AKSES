@@ -8,6 +8,7 @@ use App\Models\HomeModel;
 use App\Models\OperasionalModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class AjaxController extends Controller
@@ -302,6 +303,177 @@ class AjaxController extends Controller
         AdministratorModel::deletePosition($request->id);
 
         return response()->json(['message' => 'Data position berhasil dihapus.']);
+    }
+
+    public function absen_list(Request $request)
+    {
+        $request->validate([
+            'draw'         => 'required|integer|min:0',
+            'start'        => 'required|integer|min:0',
+            'length'       => 'required|integer|min:1|max:100',
+            'search.value' => 'nullable|string|max:100',
+        ]);
+
+        $query = DB::table('tb_absen')
+            ->join('tb_employee', 'tb_absen.nik_karyawan', '=', 'tb_employee.nik')
+            ->select(
+                'tb_absen.id',
+                'tb_absen.nik_karyawan',
+                'tb_employee.name as nama_karyawan',
+                'tb_absen.jenis',
+                'tb_absen.tanggal_mulai',
+                'tb_absen.tanggal_selesai',
+                'tb_absen.nomor_dokumen',
+                'tb_absen.status',
+                'tb_absen.keterangan',
+                'tb_absen.created_at'
+            );
+
+        $total = DB::table('tb_absen')->count();
+
+        $keyword = trim((string) $request->input('search.value', ''));
+
+        if ($keyword !== '')
+        {
+            $query->where(function ($q) use ($keyword)
+            {
+                $q->where('tb_employee.name', 'like', "%{$keyword}%")
+                    ->orWhere('tb_absen.nik_karyawan', 'like', "%{$keyword}%")
+                    ->orWhere('tb_absen.nomor_dokumen', 'like', "%{$keyword}%")
+                    ->orWhere('tb_absen.jenis', 'like', "%{$keyword}%")
+                    ->orWhere('tb_absen.status', 'like', "%{$keyword}%");
+            });
+        }
+
+        $filtered = (clone $query)->count();
+
+        $rows = $query
+            ->orderByDesc('tb_absen.id')
+            ->offset((int) $request->start)
+            ->limit((int) $request->length)
+            ->get()
+            ->map(function ($row)
+            {
+                $row->karyawan = $row->nama_karyawan
+                    .' ('.$row->nik_karyawan.')';
+
+                return $row;
+            });
+
+        return response()->json([
+            'draw'            => (int) $request->draw,
+            'recordsTotal'    => $total,
+            'recordsFiltered' => $filtered,
+            'data'            => $rows,
+        ]);
+    }
+
+    public function absen_save(Request $request)
+    {
+        $data = $request->validate([
+            'id'              => 'nullable|integer|exists:tb_absen,id',
+            'jenis'           => 'required|in:SPPD,Sakit,Cuti',
+            'tanggal_mulai'   => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'keterangan'      => 'required|string|max:5000',
+        ], [
+            'jenis.required'                 => 'Jenis absen wajib dipilih!',
+            'jenis.in'                       => 'Jenis harus SPPD, Sakit, atau Cuti!',
+            'tanggal_mulai.required'         => 'Tanggal mulai wajib diisi!',
+            'tanggal_selesai.required'       => 'Tanggal selesai wajib diisi!',
+            'tanggal_selesai.after_or_equal' => 'Tanggal selesai tidak boleh sebelum tanggal mulai!',
+            'keterangan.required'            => 'Keterangan wajib diisi!',
+        ]);
+
+        $employee = DB::table('tb_employee')
+            ->where('id', Auth::id())
+            ->first();
+
+        if (! $employee)
+        {
+            return response()->json([
+                'message' => 'Data karyawan yang login tidak ditemukan.',
+            ], 422);
+        }
+
+        $values = [
+            'nik_karyawan'    => $employee->nik,
+            'jenis'           => $data['jenis'],
+            'tanggal_mulai'   => $data['tanggal_mulai'],
+            'tanggal_selesai' => $data['tanggal_selesai'],
+            'keterangan'      => $data['keterangan'],
+            'updated_at'      => now(),
+        ];
+
+        if (! empty($data['id']))
+        {
+            $existing = DB::table('tb_absen')
+                ->where('id', $data['id'])
+                ->first();
+
+            if (! $existing)
+            {
+                return response()->json([
+                    'message' => 'Data absen tidak ditemukan.',
+                ], 404);
+            }
+
+            DB::table('tb_absen')
+                ->where('id', $data['id'])
+                ->update($values);
+
+            return response()->json([
+                'message' => 'Data absen berhasil diperbarui.',
+            ]);
+        }
+
+        $datePart = now()->format('Ymd');
+
+        $sequence = DB::table('tb_absen')
+            ->where('nomor_dokumen', 'like', "ABS-{$datePart}-%")
+            ->count() + 1;
+
+        do
+        {
+            $nomorDokumen = 'ABS-'.$datePart.'-'.str_pad(
+                (string) $sequence,
+                3,
+                '0',
+                STR_PAD_LEFT
+            );
+
+            $exists = DB::table('tb_absen')
+                ->where('nomor_dokumen', $nomorDokumen)
+                ->exists();
+
+            $sequence++;
+        }
+        while ($exists);
+
+        $values['nomor_dokumen'] = $nomorDokumen;
+        $values['status']        = 'Menunggu';
+        $values['created_at']    = now();
+
+        DB::table('tb_absen')->insert($values);
+
+        return response()->json([
+            'message' => 'Data absen berhasil disimpan.',
+        ]);
+    }
+
+    public function absen_delete(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:tb_absen,id',
+        ]);
+
+        DB::table('tb_absen')
+            ->where('id', $request->id)
+            ->delete();
+
+        return response()->json([
+            'message' => 'Data absen berhasil dihapus.',
+        ]);
     }
 
     public function alat_kerja_list(Request $request)

@@ -72,11 +72,14 @@ class AuthController extends Controller
     {
         $request->validate([
             'nik'      => 'required|integer|min:1|max:2147483647',
+            'no_ktp'   => ['required', 'regex:/^[0-9]{16}$/'],
             'name'     => 'required|string|max:100',
             'password' => 'required|string|min:8|max:255|confirmed',
         ], [
             'nik.required'       => 'NIK wajib diisi!',
             'nik.integer'        => 'NIK harus berupa angka!',
+            'no_ktp.required'    => 'Nomor KTP wajib diisi!',
+            'no_ktp.regex'       => 'Nomor KTP harus terdiri dari 16 digit angka!',
             'name.required'      => 'Nama lengkap wajib diisi!',
             'password.required'  => 'Password wajib diisi!',
             'password.min'       => 'Password minimal 8 karakter!',
@@ -88,7 +91,7 @@ class AuthController extends Controller
             return back()->withErrors(['nik' => 'NIK sudah terdaftar!'])->onlyInput('nik', 'name');
         }
 
-        AuthModel::register($request->nik, $request->name, $request->password);
+        AuthModel::register($request->nik, $request->no_ktp, $request->name, $request->password);
 
         return redirect()->route('login')->with('success', 'Pendaftaran berhasil. Akun Anda menunggu persetujuan HCM sebelum bisa login.');
     }
