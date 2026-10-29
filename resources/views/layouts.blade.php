@@ -168,6 +168,16 @@
 
 							<li class="nav-item">
 								<a
+									href="{{ route("operasional.struktur-organisasi") }}"
+									class="nav-link {{ request()->routeIs("operasional.struktur-organisasi") ? "active" : "" }}"
+								>
+									<i class="nav-icon bi bi-diagram-3"></i>
+									<p>Struktur Organisasi</p>
+								</a>
+							</li>
+
+							<li class="nav-item">
+								<a
 									href="{{ route("operasional.absen") }}"
 									class="nav-link {{ request()->routeIs("operasional.absen") ? "active" : "" }}"
 								>
