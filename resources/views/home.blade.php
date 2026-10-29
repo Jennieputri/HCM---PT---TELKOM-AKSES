@@ -33,21 +33,25 @@
 			<span class="dashboard-hero-orbit is-small" aria-hidden="true"></span>
 		</section>
 
-		<section class="row g-3 mb-3" aria-label="Indikator utama">
-			<div class="col-12 col-sm-6 col-xl-3">
-				<article class="stat-tile reveal">
-					<span class="stat-tile-icon" aria-hidden="true"><i class="bi bi-people-fill"></i></span>
-					<p class="stat-tile-label">Karyawan Aktif</p>
-					<p class="stat-tile-value" data-count-up="employees.active">0</p>
-					<p class="stat-tile-caption">
-						dari
-						<span data-count-up="employees.total">0</span>
-						akun terdaftar
-					</p>
-				</article>
-			</div>
+		@php($statTileColumn = $isHcm ? "col-12 col-sm-6 col-xl-3" : "col-12 col-md-4")
 
-			<div class="col-12 col-sm-6 col-xl-3">
+		<section class="row g-3 mb-3" aria-label="Indikator utama">
+			@if ($isHcm)
+				<div class="{{ $statTileColumn }}">
+					<article class="stat-tile reveal">
+						<span class="stat-tile-icon" aria-hidden="true"><i class="bi bi-people-fill"></i></span>
+						<p class="stat-tile-label">Karyawan Aktif</p>
+						<p class="stat-tile-value" data-count-up="employees.active">0</p>
+						<p class="stat-tile-caption">
+							dari
+							<span data-count-up="employees.total">0</span>
+							akun terdaftar
+						</p>
+					</article>
+				</div>
+			@endif
+
+			<div class="{{ $statTileColumn }}">
 				<article class="stat-tile reveal">
 					<span class="stat-tile-icon" aria-hidden="true"><i class="bi bi-tools"></i></span>
 					<p class="stat-tile-label">Alat Kerja Dipinjam</p>
@@ -60,7 +64,7 @@
 				</article>
 			</div>
 
-			<div class="col-12 col-sm-6 col-xl-3">
+			<div class="{{ $statTileColumn }}">
 				<article class="stat-tile reveal">
 					<span class="stat-tile-icon" aria-hidden="true"><i class="bi bi-broadcast-pin"></i></span>
 					<p class="stat-tile-label">STO Aktif</p>
@@ -73,7 +77,7 @@
 				</article>
 			</div>
 
-			<div class="col-12 col-sm-6 col-xl-3">
+			<div class="{{ $statTileColumn }}">
 				@if ($isHcm)
 					<a href="{{ route("administrator.approval") }}" class="stat-tile is-link reveal">
 						<span class="stat-tile-icon is-warning" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
@@ -93,25 +97,27 @@
 		</section>
 
 		<div class="row g-3">
-			<div class="col-12 col-lg-7">
-				<section class="card dashboard-panel reveal h-100" aria-labelledby="employee-status-title">
-					<div class="card-body">
-						<header class="dashboard-panel-header">
-							<div>
-								<h3 class="dashboard-panel-title" id="employee-status-title">Komposisi Status Karyawan</h3>
-								<p class="dashboard-panel-subtitle">Seluruh akun di sistem berdasarkan status akses.</p>
-							</div>
-							<p class="dashboard-panel-total">
-								<span data-count-up="employees.total">0</span>
-								akun
-							</p>
-						</header>
+			@if ($isHcm)
+				<div class="col-12 col-lg-7">
+					<section class="card dashboard-panel reveal h-100" aria-labelledby="employee-status-title">
+						<div class="card-body">
+							<header class="dashboard-panel-header">
+								<div>
+									<h3 class="dashboard-panel-title" id="employee-status-title">Komposisi Status Karyawan</h3>
+									<p class="dashboard-panel-subtitle">Seluruh akun di sistem berdasarkan status akses.</p>
+								</div>
+								<p class="dashboard-panel-total">
+									<span data-count-up="employees.total">0</span>
+									akun
+								</p>
+							</header>
 
-						<div class="stacked-bar" id="employee-status-bar" role="img" aria-label="Komposisi status karyawan"></div>
-						<ul class="status-legend" id="employee-status-legend"></ul>
-					</div>
-				</section>
-			</div>
+							<div class="stacked-bar" id="employee-status-bar" role="img" aria-label="Komposisi status karyawan"></div>
+							<ul class="status-legend" id="employee-status-legend"></ul>
+						</div>
+					</section>
+				</div>
+			@endif
 
 			<div class="col-12 col-lg-5">
 				<section class="card dashboard-panel reveal h-100" aria-labelledby="alat-kerja-title">
@@ -128,7 +134,7 @@
 				</section>
 			</div>
 
-			<div class="col-12 {{ $isHcm ? "col-lg-7" : "" }}">
+			<div class="col-12 col-lg-7">
 				<section class="card dashboard-panel reveal h-100" aria-labelledby="sto-kecamatan-title">
 					<div class="card-body">
 						<header class="dashboard-panel-header">

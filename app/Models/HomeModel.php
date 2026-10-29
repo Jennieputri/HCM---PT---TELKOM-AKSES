@@ -11,7 +11,7 @@ class HomeModel
     public static function dashboardSummary(bool $includeAdministration)
     {
         return [
-            'employees'      => self::employeeSummary(),
+            'employees'      => $includeAdministration ? self::employeeSummary() : null,
             'alat_kerja'     => self::alatKerjaSummary(),
             'sto'            => self::stoSummary(),
             'administration' => $includeAdministration ? self::administrationSummary() : null,

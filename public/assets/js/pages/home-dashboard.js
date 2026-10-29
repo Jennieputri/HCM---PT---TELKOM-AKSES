@@ -204,7 +204,12 @@ $(function ()
         .done(function (summary)
         {
             renderCountUps(summary);
-            renderEmployeeStatus(summary.employees);
+
+            if (summary.employees)
+            {
+                renderEmployeeStatus(summary.employees);
+            }
+
             renderAlatKerja(summary.alat_kerja);
             renderStoKecamatan(summary.sto.by_kecamatan);
         })
