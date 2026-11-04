@@ -1,3 +1,4 @@
+
 $(function ()
 {
     var $page = $('#employee-page');
@@ -7,7 +8,7 @@ $(function ()
     var deleteModal = new bootstrap.Modal('#employee-delete-modal');
     var $roleSelect = $('#employee-role');
     var $statusSelect = $('#employee-status');
-    var employeeFieldNames = ['id', 'nik', 'name', 'number_phone', 'email', 'address', 'status'];
+    var employeeFieldNames = ['id', 'nik', 'name', 'no_ktp', 'number_phone', 'email', 'address', 'status'];
     var employeeIdToDelete = null;
 
     var employeeStatuses =
@@ -21,9 +22,12 @@ $(function ()
     var employeeTable = $('#employee-table').DataTable(
     {
         ajax: filteredDataTableAjax($page.data('list-url'), $filterPanel),
+
         columns:
         [
-            { data: 'employee_label', render: DataTable.render.text() },
+            { data: 'nik', render: DataTable.render.text(), defaultContent: '-' },
+            { data: 'name', render: DataTable.render.text(), defaultContent: '-' },
+            { data: 'no_ktp', render: DataTable.render.text(), defaultContent: '-' },
             { data: 'email', render: DataTable.render.text(), defaultContent: '-' },
             { data: 'number_phone', render: DataTable.render.text(), defaultContent: '-' },
             { data: 'role_name', render: DataTable.render.text(), defaultContent: '-' },
@@ -107,10 +111,11 @@ $(function ()
     {
         var employee = rowData(this);
 
-        showRecordDetail(employee.employee_label,
+        showRecordDetail(employee.name || employee.employee_label,
         [
             ['NIK', employee.nik],
             ['Nama', employee.name],
+            ['No. KTP', employee.no_ktp],
             ['Email', employee.email],
             ['No. HP', employee.number_phone],
             ['Alamat', employee.address],
@@ -127,7 +132,7 @@ $(function ()
 
         $.each(employeeFieldNames, function (index, fieldName)
         {
-            $form.find('[name="' + fieldName + '"]').val(employee[fieldName]);
+            $form.find('[name="' + fieldName + '"]').val(employee[fieldName] ?? '');
         });
 
         if (employee.role_id)
@@ -168,7 +173,7 @@ $(function ()
         var employee = rowData(this);
 
         employeeIdToDelete = employee.id;
-        $('#employee-delete-name').text(employee.employee_label);
+        $('#employee-delete-name').text(employee.name || employee.employee_label);
 
         deleteModal.show();
     });

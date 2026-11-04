@@ -129,12 +129,15 @@ class AjaxController extends Controller
             Auth::id(),
         );
 
-        if ($approvedRows === 0)
-        {
-            return response()->json(['message' => 'Akun ini tidak sedang menunggu persetujuan.'], 422);
+        if ($approvedRows === 0) {
+            return response()->json([
+                'message' => 'Akun ini tidak sedang menunggu persetujuan.',
+            ], 422);
         }
 
-        return response()->json(['message' => 'Akun berhasil disetujui dan sekarang bisa login.']);
+        return response()->json([
+            'message' => 'Akun berhasil disetujui dan sekarang bisa login.',
+        ]);
     }
 
     public function approval_reject(Request $request)
@@ -150,12 +153,15 @@ class AjaxController extends Controller
             Auth::id(),
         );
 
-        if ($rejectedRows === 0)
-        {
-            return response()->json(['message' => 'Akun ini tidak sedang menunggu persetujuan.'], 422);
+        if ($rejectedRows === 0) {
+            return response()->json([
+                'message' => 'Akun ini tidak sedang menunggu persetujuan.',
+            ], 422);
         }
 
-        return response()->json(['message' => 'Pendaftaran akun berhasil ditolak.']);
+        return response()->json([
+            'message' => 'Pendaftaran akun berhasil ditolak.',
+        ]);
     }
 
     public function employee_list(Request $request)
@@ -173,6 +179,7 @@ class AjaxController extends Controller
             'id'           => 'nullable|integer|exists:tb_employee,id',
             'nik'          => ['required', 'integer', 'min:1', 'max:2147483647', Rule::unique('tb_employee', 'nik')->ignore($request->id)],
             'name'         => 'required|string|max:100',
+            'no_ktp'       => 'nullable|string|digits:16',
             'number_phone' => 'nullable|string|max:15|regex:/^[0-9+]+$/',
             'email'        => 'nullable|email|max:50',
             'address'      => 'nullable|string|max:1000',
@@ -184,6 +191,7 @@ class AjaxController extends Controller
             'nik.integer'               => 'NIK harus berupa angka!',
             'nik.unique'                => 'NIK sudah terdaftar!',
             'name.required'             => 'Nama wajib diisi!',
+            'no_ktp.digits'             => 'No. KTP harus terdiri dari 16 digit!',
             'number_phone.regex'        => 'No. HP hanya boleh angka dan tanda +.',
             'email.email'               => 'Format email tidak valid!',
             'role_id.required'          => 'Role wajib dipilih!',
@@ -194,7 +202,9 @@ class AjaxController extends Controller
 
         AdministratorModel::saveEmployee($employee, Auth::id());
 
-        return response()->json(['message' => 'Data karyawan berhasil disimpan.']);
+        return response()->json([
+            'message' => 'Data karyawan berhasil disimpan.',
+        ]);
     }
 
     public function employee_delete(Request $request)
@@ -203,14 +213,17 @@ class AjaxController extends Controller
             'id' => 'required|integer|exists:tb_employee,id',
         ]);
 
-        if ((int) $request->id === (int) Auth::id())
-        {
-            return response()->json(['message' => 'Akun yang sedang Anda pakai tidak bisa dihapus.'], 422);
+        if ((int) $request->id === (int) Auth::id()) {
+            return response()->json([
+                'message' => 'Akun yang sedang Anda pakai tidak bisa dihapus.',
+            ], 422);
         }
 
         AdministratorModel::deleteEmployee($request->id);
 
-        return response()->json(['message' => 'Data karyawan berhasil dihapus.']);
+        return response()->json([
+            'message' => 'Data karyawan berhasil dihapus.',
+        ]);
     }
 
     public function role_list(Request $request)
@@ -251,7 +264,9 @@ class AjaxController extends Controller
 
         AdministratorModel::saveRole($role, Auth::id());
 
-        return response()->json(['message' => 'Data role berhasil disimpan.']);
+        return response()->json([
+            'message' => 'Data role berhasil disimpan.',
+        ]);
     }
 
     public function role_delete(Request $request)
@@ -260,14 +275,17 @@ class AjaxController extends Controller
             'id' => 'required|integer|exists:tb_role,id',
         ]);
 
-        if (AdministratorModel::isRoleUsed($request->id))
-        {
-            return response()->json(['message' => 'Role masih dipakai karyawan, tidak bisa dihapus.'], 422);
+        if (AdministratorModel::isRoleUsed($request->id)) {
+            return response()->json([
+                'message' => 'Role masih dipakai karyawan, tidak bisa dihapus.',
+            ], 422);
         }
 
         AdministratorModel::deleteRole($request->id);
 
-        return response()->json(['message' => 'Data role berhasil dihapus.']);
+        return response()->json([
+            'message' => 'Data role berhasil dihapus.',
+        ]);
     }
 
     public function position_list(Request $request)
@@ -291,7 +309,9 @@ class AjaxController extends Controller
 
         AdministratorModel::savePosition($position, Auth::id());
 
-        return response()->json(['message' => 'Data position berhasil disimpan.']);
+        return response()->json([
+            'message' => 'Data position berhasil disimpan.',
+        ]);
     }
 
     public function position_delete(Request $request)
@@ -302,7 +322,9 @@ class AjaxController extends Controller
 
         AdministratorModel::deletePosition($request->id);
 
-        return response()->json(['message' => 'Data position berhasil dihapus.']);
+        return response()->json([
+            'message' => 'Data position berhasil dihapus.',
+        ]);
     }
 
     public function absen_list(Request $request)
@@ -313,6 +335,9 @@ class AjaxController extends Controller
             'length'       => 'required|integer|min:1|max:100',
             'search.value' => 'nullable|string|max:100',
         ]);
+
+        $user = Auth::user();
+        $isHcm = $user->isHcm();
 
         $query = DB::table('tb_absen')
             ->join('tb_employee', 'tb_absen.nik_karyawan', '=', 'tb_employee.nik')
@@ -326,17 +351,20 @@ class AjaxController extends Controller
                 'tb_absen.nomor_dokumen',
                 'tb_absen.status',
                 'tb_absen.keterangan',
+                'tb_absen.keterangan_admin',
                 'tb_absen.created_at'
             );
 
-        $total = DB::table('tb_absen')->count();
+        if (!$isHcm) {
+            $query->where('tb_absen.nik_karyawan', $user->nik);
+        }
+
+        $total = (clone $query)->count();
 
         $keyword = trim((string) $request->input('search.value', ''));
 
-        if ($keyword !== '')
-        {
-            $query->where(function ($q) use ($keyword)
-            {
+        if ($keyword !== '') {
+            $query->where(function ($q) use ($keyword) {
                 $q->where('tb_employee.name', 'like', "%{$keyword}%")
                     ->orWhere('tb_absen.nik_karyawan', 'like', "%{$keyword}%")
                     ->orWhere('tb_absen.nomor_dokumen', 'like', "%{$keyword}%")
@@ -352,10 +380,9 @@ class AjaxController extends Controller
             ->offset((int) $request->start)
             ->limit((int) $request->length)
             ->get()
-            ->map(function ($row)
-            {
+            ->map(function ($row) {
                 $row->karyawan = $row->nama_karyawan
-                    .' ('.$row->nik_karyawan.')';
+                    . ' (' . $row->nik_karyawan . ')';
 
                 return $row;
             });
@@ -370,6 +397,8 @@ class AjaxController extends Controller
 
     public function absen_save(Request $request)
     {
+        abort_unless(!Auth::user()->isHcm(), 403);
+
         $data = $request->validate([
             'id'              => 'nullable|integer|exists:tb_absen,id',
             'jenis'           => 'required|in:SPPD,Sakit,Cuti',
@@ -385,19 +414,9 @@ class AjaxController extends Controller
             'keterangan.required'            => 'Keterangan wajib diisi!',
         ]);
 
-        $employee = DB::table('tb_employee')
-            ->where('id', Auth::id())
-            ->first();
-
-        if (! $employee)
-        {
-            return response()->json([
-                'message' => 'Data karyawan yang login tidak ditemukan.',
-            ], 422);
-        }
+        $nik = Auth::user()->nik;
 
         $values = [
-            'nik_karyawan'    => $employee->nik,
             'jenis'           => $data['jenis'],
             'tanggal_mulai'   => $data['tanggal_mulai'],
             'tanggal_selesai' => $data['tanggal_selesai'],
@@ -405,25 +424,32 @@ class AjaxController extends Controller
             'updated_at'      => now(),
         ];
 
-        if (! empty($data['id']))
-        {
+        if (!empty($data['id'])) {
             $existing = DB::table('tb_absen')
                 ->where('id', $data['id'])
+                ->where('nik_karyawan', $nik)
                 ->first();
 
-            if (! $existing)
-            {
+            if (!$existing) {
                 return response()->json([
-                    'message' => 'Data absen tidak ditemukan.',
-                ], 404);
+                    'message' => 'Pengajuan tidak ditemukan atau bukan milik Anda.',
+                ], 403);
+            }
+
+            if ($existing->status !== 'Menunggu') {
+                return response()->json([
+                    'message' => 'Pengajuan yang sudah diproses tidak dapat diedit.',
+                ], 422);
             }
 
             DB::table('tb_absen')
                 ->where('id', $data['id'])
+                ->where('nik_karyawan', $nik)
+                ->where('status', 'Menunggu')
                 ->update($values);
 
             return response()->json([
-                'message' => 'Data absen berhasil diperbarui.',
+                'message' => 'Pengajuan berhasil diperbarui.',
             ]);
         }
 
@@ -433,46 +459,126 @@ class AjaxController extends Controller
             ->where('nomor_dokumen', 'like', "ABS-{$datePart}-%")
             ->count() + 1;
 
-        do
-        {
-            $nomorDokumen = 'ABS-'.$datePart.'-'.str_pad(
-                (string) $sequence,
-                3,
-                '0',
-                STR_PAD_LEFT
-            );
+        do {
+            $nomorDokumen = 'ABS-' . $datePart . '-'
+                . str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
 
             $exists = DB::table('tb_absen')
                 ->where('nomor_dokumen', $nomorDokumen)
                 ->exists();
 
             $sequence++;
-        }
-        while ($exists);
+        } while ($exists);
 
+        $values['nik_karyawan'] = $nik;
         $values['nomor_dokumen'] = $nomorDokumen;
-        $values['status']        = 'Menunggu';
-        $values['created_at']    = now();
+        $values['status'] = 'Menunggu';
+        $values['created_at'] = now();
 
         DB::table('tb_absen')->insert($values);
 
         return response()->json([
-            'message' => 'Data absen berhasil disimpan.',
+            'message' => 'Pengajuan berhasil disimpan.',
         ]);
     }
 
     public function absen_delete(Request $request)
     {
+        abort_unless(!Auth::user()->isHcm(), 403);
+
         $request->validate([
             'id' => 'required|integer|exists:tb_absen,id',
         ]);
 
+        $nik = Auth::user()->nik;
+
+        $absen = DB::table('tb_absen')
+            ->where('id', $request->id)
+            ->where('nik_karyawan', $nik)
+            ->first();
+
+        if (!$absen) {
+            return response()->json([
+                'message' => 'Pengajuan tidak ditemukan atau bukan milik Anda.',
+            ], 403);
+        }
+
+        if ($absen->status !== 'Menunggu') {
+            return response()->json([
+                'message' => 'Pengajuan yang sudah diproses tidak dapat dihapus.',
+            ], 422);
+        }
+
         DB::table('tb_absen')
             ->where('id', $request->id)
+            ->where('nik_karyawan', $nik)
+            ->where('status', 'Menunggu')
             ->delete();
 
         return response()->json([
-            'message' => 'Data absen berhasil dihapus.',
+            'message' => 'Pengajuan berhasil dihapus.',
+        ]);
+    }
+
+    public function absen_approve(Request $request)
+    {
+        abort_unless(Auth::user()->isHcm(), 403);
+
+        $data = $request->validate([
+            'id' => 'required|integer|exists:tb_absen,id',
+            'keterangan_admin' => 'required|string|max:5000',
+        ], [
+            'keterangan_admin.required' => 'Keterangan dari HCM wajib diisi!',
+        ]);
+
+        $updated = DB::table('tb_absen')
+            ->where('id', $data['id'])
+            ->where('status', 'Menunggu')
+            ->update([
+                'status' => 'Disetujui',
+                'keterangan_admin' => $data['keterangan_admin'],
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return response()->json([
+                'message' => 'Pengajuan tidak ditemukan atau sudah diproses sebelumnya.',
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Pengajuan berhasil disetujui.',
+        ]);
+    }
+
+    public function absen_reject(Request $request)
+    {
+        abort_unless(Auth::user()->isHcm(), 403);
+
+        $data = $request->validate([
+            'id' => 'required|integer|exists:tb_absen,id',
+            'keterangan_admin' => 'required|string|max:5000',
+        ], [
+            'keterangan_admin.required' => 'Keterangan dari HCM wajib diisi!',
+        ]);
+
+        $updated = DB::table('tb_absen')
+            ->where('id', $data['id'])
+            ->where('status', 'Menunggu')
+            ->update([
+                'status' => 'Ditolak',
+                'keterangan_admin' => $data['keterangan_admin'],
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return response()->json([
+                'message' => 'Pengajuan tidak ditemukan atau sudah diproses sebelumnya.',
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Pengajuan berhasil ditolak.',
         ]);
     }
 
@@ -507,7 +613,9 @@ class AjaxController extends Controller
 
         OperasionalModel::saveAlatKerja($alatKerja, Auth::id());
 
-        return response()->json(['message' => 'Data alat kerja berhasil disimpan.']);
+        return response()->json([
+            'message' => 'Data alat kerja berhasil disimpan.',
+        ]);
     }
 
     public function alat_kerja_delete(Request $request)
@@ -518,7 +626,9 @@ class AjaxController extends Controller
 
         OperasionalModel::deleteAlatKerja($request->id);
 
-        return response()->json(['message' => 'Data alat kerja berhasil dihapus.']);
+        return response()->json([
+            'message' => 'Data alat kerja berhasil dihapus.',
+        ]);
     }
 
     public function sto_list(Request $request)
@@ -534,7 +644,9 @@ class AjaxController extends Controller
     {
         $filters = $this->readFilters($request, self::STO_FILTER_RULES);
 
-        return response()->json(['data' => OperasionalModel::stoMarkers($filters, self::MAX_STO_MARKERS)]);
+        return response()->json([
+            'data' => OperasionalModel::stoMarkers($filters, self::MAX_STO_MARKERS),
+        ]);
     }
 
     public function sto_save(Request $request)
@@ -562,7 +674,9 @@ class AjaxController extends Controller
 
         OperasionalModel::saveSto($sto);
 
-        return response()->json(['message' => 'Data STO berhasil disimpan.']);
+        return response()->json([
+            'message' => 'Data STO berhasil disimpan.',
+        ]);
     }
 
     public function sto_delete(Request $request)
@@ -573,7 +687,9 @@ class AjaxController extends Controller
 
         OperasionalModel::deleteSto($request->id);
 
-        return response()->json(['message' => 'Data STO berhasil dihapus.']);
+        return response()->json([
+            'message' => 'Data STO berhasil dihapus.',
+        ]);
     }
 
     private function readDataTableRequest(Request $request, array $sortableColumns)
@@ -603,9 +719,8 @@ class AjaxController extends Controller
     {
         $rules = [];
 
-        foreach ($filterRules as $fieldName => $rule)
-        {
-            $rules['filters.'.$fieldName] = $rule;
+        foreach ($filterRules as $fieldName => $rule) {
+            $rules['filters.' . $fieldName] = $rule;
         }
 
         $filters = $request->validate($rules)['filters'] ?? [];

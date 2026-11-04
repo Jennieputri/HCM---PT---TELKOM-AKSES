@@ -17,6 +17,7 @@ class AdministratorModel
             ->select(
                 'tb_employee.id',
                 'tb_employee.nik',
+                'tb_employee.no_ktp',
                 'tb_employee.name',
                 self::personLabel('tb_employee', 'employee_label'),
                 'tb_employee.number_phone',
@@ -106,6 +107,7 @@ class AdministratorModel
     {
         $employeeData = [
             'nik'          => $employee['nik'],
+            'no_ktp'       => $employee['no_ktp'] ?? null,
             'name'         => $employee['name'],
             'number_phone' => $employee['number_phone'] ?? null,
             'email'        => $employee['email']        ?? null,

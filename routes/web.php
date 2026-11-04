@@ -67,6 +67,14 @@ Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(
         Route::post('absen/list', [AjaxController::class, 'absen_list'])->name('absen.list');
         Route::post('absen/save', [AjaxController::class, 'absen_save'])->name('absen.save');
         Route::post('absen/delete', [AjaxController::class, 'absen_delete'])->name('absen.delete');
+        
+        Route::post('absen/approve', [AjaxController::class, 'absen_approve'])
+        ->middleware('role.hcm')
+        ->name('absen.approve');
+        
+        Route::post('absen/reject', [AjaxController::class, 'absen_reject'])
+            ->middleware('role.hcm')
+            ->name('absen.reject');
 
         Route::post('alat-kerja/list', [AjaxController::class, 'alat_kerja_list'])->name('alat-kerja.list');
         Route::post('alat-kerja/save', [AjaxController::class, 'alat_kerja_save'])->name('alat-kerja.save');
