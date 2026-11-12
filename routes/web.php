@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function ()
     {
         Route::get('struktur-organisasi', [OperasionalController::class, 'strukturOrganisasi'])->name('struktur-organisasi');
         Route::get('absen', [OperasionalController::class, 'absen'])->name('absen');
+        Route::get('absen/{id}/download', [AjaxController::class, 'absen_download'])->name('absen.download');
         Route::get('alat-kerja', [OperasionalController::class, 'alatKerja'])->name('alat-kerja');
         Route::get('sto', [OperasionalController::class, 'sto'])->name('sto');
     });
@@ -65,13 +66,14 @@ Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(
     Route::prefix('operasional')->name('operasional.')->group(function ()
     {
         Route::post('absen/list', [AjaxController::class, 'absen_list'])->name('absen.list');
+        Route::post('absen/nomor-dokumen', [AjaxController::class, 'absen_nomor_dokumen'])->name('absen.nomor-dokumen');
         Route::post('absen/save', [AjaxController::class, 'absen_save'])->name('absen.save');
         Route::post('absen/delete', [AjaxController::class, 'absen_delete'])->name('absen.delete');
-        
+
         Route::post('absen/approve', [AjaxController::class, 'absen_approve'])
-        ->middleware('role.hcm')
-        ->name('absen.approve');
-        
+            ->middleware('role.hcm')
+            ->name('absen.approve');
+
         Route::post('absen/reject', [AjaxController::class, 'absen_reject'])
             ->middleware('role.hcm')
             ->name('absen.reject');
@@ -84,5 +86,5 @@ Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(
         Route::post('sto/markers', [AjaxController::class, 'sto_markers'])->name('sto.markers');
         Route::post('sto/save', [AjaxController::class, 'sto_save'])->name('sto.save');
         Route::post('sto/delete', [AjaxController::class, 'sto_delete'])->name('sto.delete');
-        });
+    });
 });

@@ -93,12 +93,33 @@ $(function () {
         return parts[2] + '/' + parts[1] + '/' + parts[0];
     }
 
+    function updateCutiDuration() {
+        var start = $('[name="cuti_tanggal_mulai"]').val();
+        var end = $('[name="cuti_tanggal_selesai"]').val();
+
+        if (!start || !end) {
+            $('#cuti-lama').val('');
+            return;
+        }
+
+        var startParts = start.split('-').map(Number);
+        var endParts = end.split('-').map(Number);
+        var startDate = Date.UTC(startParts[0], startParts[1] - 1, startParts[2]);
+        var endDate = Date.UTC(endParts[0], endParts[1] - 1, endParts[2]);
+
+        if (Number.isNaN(startDate) || Number.isNaN(endDate) || endDate < startDate) {
+            $('#cuti-lama').val('');
+            return;
+        }
+
+        $('#cuti-lama').val(Math.floor((endDate - startDate) / 86400000) + 1);
+    }
+
     // CELL TABEL
     function createTextCell(value) {
         return $('<td></td>').text(value == null ? '-' : value);
     }
 
-    // RENDER BARIS ABSEN
     function renderAbsenRow(absen, rowNumber) {
         var $row = $('<tr></tr>');
 
@@ -124,7 +145,7 @@ $(function () {
         var $action = $('<td class="text-end"></td>')
             .attr('data-absen-id', absen.id);
 
-        // DETAIL
+        // TOMBOL DETAIL
         var $detailButton = $(`
             <button type="button"
                 class="btn btn-sm btn-outline-info btn-detail"
@@ -135,20 +156,42 @@ $(function () {
 
         $action.append($detailButton);
 
+        // TOMBOL DOWNLOAD PDF
+        if (
+            absen.status === 'Disetujui' &&
+            absen.pdf_path
+        ) {
+            var $downloadButton = $(`
+                <a class="btn btn-sm btn-outline-success btn-download-pdf ms-1"
+                    title="Download PDF"
+                    target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                </a>
+            `);
+
+            $downloadButton.attr(
+                'href',
+                '/operasional/absen/' +
+                encodeURIComponent(absen.id) +
+                '/download'
+            );
+
+            $action.append($downloadButton);
+        }
+
         // AKSI HCM
         if (isHcm) {
 
             if (absen.status === 'Menunggu') {
-
-                var $editButton = $(`
+                var $approvalButton = $(`
                     <button type="button"
                         class="btn btn-sm btn-outline-primary btn-approval-edit ms-1"
-                        title="Edit">
+                        title="Proses Persetujuan">
                         <i class="bi bi-pencil-square"></i>
                     </button>
                 `);
 
-                $action.append($editButton);
+                $action.append($approvalButton);
             }
 
         } else {
@@ -295,6 +338,17 @@ $(function () {
         $form[0].reset();
 
         clearFormErrors($form);
+        $('#cuti-jenis-wrapper').addClass('d-none');
+
+        // Kembalikan modal ke tahap pertama
+        $('#absen-step-pilih').removeClass('d-none');
+        $('#absen-step-form').addClass('d-none');
+
+        $('#absen-form-cuti, #absen-form-sppd, #absen-form-sakit')
+            .addClass('d-none');
+
+        $('#absen-footer-pilih').removeClass('d-none');
+        $('#absen-footer-form').addClass('d-none');
 
         $('#absen-form-title').text(title);
 
@@ -346,6 +400,51 @@ $(function () {
         openFormModal('Tambah Absen');
     });
 
+    // PILIH JENIS ABSEN
+    $('#btn-absen-selanjutnya').on('click', function () {
+
+        var jenis = $('#absen-jenis').val();
+
+        if (!jenis) {
+            $('#absen-jenis')
+                .addClass('is-invalid')
+                .trigger('focus');
+
+            showMessage(
+                'Silakan pilih jenis absen terlebih dahulu.',
+                'danger'
+            );
+
+            return;
+        }
+
+        $('#absen-jenis').removeClass('is-invalid');
+        $('#cuti-jenis-wrapper').toggleClass('d-none', jenis !== 'Cuti');
+
+        $('#absen-step-pilih').addClass('d-none');
+        $('#absen-step-form').removeClass('d-none');
+
+        $('#absen-form-cuti, #absen-form-sppd, #absen-form-sakit')
+            .addClass('d-none');
+
+        if (jenis === 'Cuti') {
+            $('#absen-form-cuti').removeClass('d-none');
+
+        } else if (jenis === 'SPPD') {
+            $('#absen-form-sppd').removeClass('d-none');
+
+        } else if (jenis === 'Sakit') {
+            $('#absen-form-sakit').removeClass('d-none');
+        }
+
+        $('#absen-footer-pilih').addClass('d-none');
+        $('#absen-footer-form').removeClass('d-none');
+
+        $('#absen-form-title').text('Form Pengajuan ' + jenis);
+    });
+
+    $form.on('change', '#cuti-mulai, #cuti-selesai', updateCutiDuration);
+
     // SIMPAN ABSEN KARYAWAN
     $form.on('submit', function (event) {
         event.preventDefault();
@@ -354,68 +453,90 @@ $(function () {
 
         clearFormErrors($form);
 
-        var data = {
-            jenis: $form.find('[name="jenis"]').val(),
-            tanggal_mulai: $form.find('[name="tanggal_mulai"]').val(),
-            tanggal_selesai: $form.find('[name="tanggal_selesai"]').val(),
-            keterangan: $form.find('[name="keterangan"]').val()
-        };
+        var jenis = $('#absen-jenis').val();
 
-        var errors = {};
-
-        if (!data.jenis) {
-            errors.jenis = ['Jenis absen wajib dipilih!'];
-        }
-
-        if (!data.tanggal_mulai) {
-            errors.tanggal_mulai = ['Tanggal mulai wajib diisi!'];
-        }
-
-        if (!data.tanggal_selesai) {
-            errors.tanggal_selesai = ['Tanggal selesai wajib diisi!'];
-        } else if (
-            data.tanggal_mulai &&
-            data.tanggal_selesai < data.tanggal_mulai
-        ) {
-            errors.tanggal_selesai = [
-                'Tanggal selesai tidak boleh sebelum tanggal mulai!'
-            ];
-        }
-
-        if (!String(data.keterangan || '').trim()) {
-            errors.keterangan = ['Keterangan wajib diisi!'];
-        }
-
-        if (!$.isEmptyObject(errors)) {
-            showFieldErrors(errors, $form);
+        if (!jenis) {
+            showMessage(
+                'Silakan pilih jenis absen terlebih dahulu.',
+                'danger'
+            );
             return;
         }
 
-        if (editedAbsenId !== null) {
-            data.id = editedAbsenId;
+        // VALIDASI TANGGAL SESUAI JENIS ABSEN
+        var tanggalMulai = '';
+        var tanggalSelesai = '';
+
+        if (jenis === 'Cuti') {
+            tanggalMulai = $('[name="cuti_tanggal_mulai"]').val();
+            tanggalSelesai = $('[name="cuti_tanggal_selesai"]').val();
+
+        } else if (jenis === 'SPPD') {
+            tanggalMulai = $('[name="sppd_tanggal_mulai"]').val();
+            tanggalSelesai = $('[name="sppd_tanggal_selesai"]').val();
+
+        } else if (jenis === 'Sakit') {
+            tanggalMulai = $('#absen-form [name="tanggal_mulai"]').val();
+            tanggalSelesai = $('#absen-form [name="tanggal_selesai"]').val();
         }
 
-        var $button = $form.find('[type="submit"]');
+        if (!tanggalMulai || !tanggalSelesai) {
+            showMessage(
+                'Tanggal mulai dan tanggal selesai wajib diisi.',
+                'danger'
+            );
+            return;
+        }
+
+        if (tanggalSelesai < tanggalMulai) {
+            showMessage(
+                'Tanggal selesai tidak boleh sebelum tanggal mulai.',
+                'danger'
+            );
+            return;
+        }
+
+        // FORM DATA: MENGIRIM SEMUA INPUT TERMASUK FILE
+        var data = new FormData($form[0]);
+
+        if (editedAbsenId !== null) {
+            data.append('id', editedAbsenId);
+        }
+
+        var $button = $('#btn-absen-ajukan');
 
         $button.prop('disabled', true);
 
-        sendRequest(urls.save, data)
-            .done(function (response) {
-                formModal.hide();
+        $.ajax({
+            url: urls.save,
+            type: 'POST',
+            data: data,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            }
+        })
+        .done(function (response) {
 
-                editedAbsenId = null;
+            formModal.hide();
 
-                showMessage(
-                    response.message || 'Data absen berhasil disimpan.',
-                    'success'
-                );
+            editedAbsenId = null;
 
-                loadAbsen();
-            })
-            .fail(showAjaxError)
-            .always(function () {
-                $button.prop('disabled', false);
-            });
+            showMessage(
+                response.message || 'Pengajuan berhasil diajukan.',
+                'success'
+            );
+
+            loadAbsen();
+        })
+        .fail(function (xhr) {
+            showAjaxError(xhr);
+        })
+        .always(function () {
+            $button.prop('disabled', false);
+        });
     });
 
     // DETAIL ABSEN
@@ -442,6 +563,16 @@ $(function () {
             ['Status', absen.status]
         ];
 
+        if (absen.jenis === 'Cuti') {
+            detailRows.splice(
+                2,
+                0,
+                ['Band', absen.band || '-'],
+                ['Jabatan', absen.jabatan || '-'],
+                ['Unit Kerja', absen.unit_kerja || '-']
+            );
+        }
+
         if (absen.keterangan_admin) {
             detailRows.push([
                 'Keterangan Admin',
@@ -457,10 +588,7 @@ $(function () {
         showRecordDetail(absen.nomor_dokumen, detailRows);
     });
 
-    // ======================================
     // EDIT KHUSUS HCM - BUKA MODAL PERSETUJUAN
-    // ======================================
-
     $tableBody.on('click', '.btn-approval-edit', function () {
 
         if (!isHcm) return;
@@ -480,18 +608,12 @@ $(function () {
         approvalAbsenId = id;
 
         $('#absen-approval-id').val(id);
-
-        // Kosongkan keterangan keputusan sebelumnya
         $('#absen-approval-keterangan').val('');
 
-        // Buka pop-up
         approvalModal.show();
     });
 
-    // ======================================
     // PROSES SETUJUI / TOLAK
-    // ======================================
-
     function processApproval(decision) {
 
         if (!isHcm || approvalAbsenId === null) return;
@@ -500,7 +622,6 @@ $(function () {
             $('#absen-approval-keterangan').val() || ''
         ).trim();
 
-        // Keterangan wajib diisi
         if (!keterangan) {
             showMessage(
                 'Keterangan wajib diisi sebelum memberikan keputusan.',
@@ -543,7 +664,6 @@ $(function () {
                 'success'
             );
 
-            // Muat ulang status dari database
             loadAbsen();
         })
         .fail(showAjaxError)
@@ -571,10 +691,7 @@ $(function () {
         $('#absen-approval-keterangan').val('');
     });
 
-    // ======================================
     // EDIT PENGAJUAN OLEH KARYAWAN
-    // ======================================
-
     $tableBody.on('click', '.btn-edit', function () {
 
         if (isHcm) return;
@@ -602,6 +719,28 @@ $(function () {
             $form.find('[name="' + field + '"]')
                 .val(absen[field] || '');
         });
+
+        if (absen.jenis === 'Cuti') {
+            [
+                ['jenis_cuti', 'jenis_cuti'],
+                ['band', 'band'],
+                ['jabatan', 'jabatan'],
+                ['unit_kerja', 'unit_kerja'],
+                ['lama_cuti', 'lama_cuti'],
+                ['cuti_tanggal_mulai', 'cuti_tanggal_mulai'],
+                ['cuti_tanggal_selesai', 'cuti_tanggal_selesai'],
+                ['alamat_selama_cuti', 'alamat_selama_cuti'],
+                ['telepon_cuti', 'telepon_cuti'],
+                ['perjalanan_berangkat_mulai', 'perjalanan_berangkat_mulai'],
+                ['perjalanan_berangkat_selesai', 'perjalanan_berangkat_selesai'],
+                ['perjalanan_pulang_mulai', 'perjalanan_pulang_mulai'],
+                ['perjalanan_pulang_selesai', 'perjalanan_pulang_selesai'],
+                ['alasan_cuti', 'alasan_cuti']
+            ].forEach(function (field) {
+                $form.find('[name="' + field[0] + '"]')
+                    .val(absen[field[1]] || '');
+            });
+        }
     });
 
     // HAPUS ABSEN

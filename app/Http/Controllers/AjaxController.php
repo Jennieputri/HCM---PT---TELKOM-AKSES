@@ -6,9 +6,12 @@ use App\Models\AdministratorModel;
 use App\Models\AuthModel;
 use App\Models\HomeModel;
 use App\Models\OperasionalModel;
+use App\Services\AbsenPdfGenerator;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class AjaxController extends Controller
@@ -327,7 +330,7 @@ class AjaxController extends Controller
         ]);
     }
 
-    public function absen_list(Request $request)
+        public function absen_list(Request $request)
     {
         $request->validate([
             'draw'         => 'required|integer|min:0',
@@ -352,6 +355,8 @@ class AjaxController extends Controller
                 'tb_absen.status',
                 'tb_absen.keterangan',
                 'tb_absen.keterangan_admin',
+                'tb_absen.pdf_path',
+                'tb_absen.surat_dokter_path as surat_dokter_path_utama',
                 'tb_absen.created_at'
             );
 
@@ -384,6 +389,74 @@ class AjaxController extends Controller
                 $row->karyawan = $row->nama_karyawan
                     . ' (' . $row->nik_karyawan . ')';
 
+                // DATA DETAIL CUTI
+                $cuti = null;
+
+                if ($row->jenis === 'Cuti') {
+                    $cuti = DB::table('tb_absen_cuti')
+                        ->where('absen_id', $row->id)
+                        ->first();
+                }
+
+                $row->jenis_cuti = $cuti->jenis_cuti ?? null;
+                $row->lama_cuti = $cuti->lama_cuti ?? null;
+                $row->band = $cuti->band ?? null;
+                $row->jabatan = $cuti->jabatan ?? null;
+                $row->unit_kerja = $cuti->unit_kerja ?? null;
+                $row->cuti_tanggal_mulai = $cuti->tanggal_mulai ?? null;
+                $row->cuti_tanggal_selesai = $cuti->tanggal_selesai ?? null;
+                $row->alamat_selama_cuti = $cuti->alamat_selama_cuti ?? null;
+                $row->telepon_cuti = $cuti->telepon_cuti ?? null;
+                $row->perjalanan_berangkat_mulai = $cuti->perjalanan_berangkat_mulai ?? null;
+                $row->perjalanan_berangkat_selesai = $cuti->perjalanan_berangkat_selesai ?? null;
+                $row->perjalanan_pulang_mulai = $cuti->perjalanan_pulang_mulai ?? null;
+                $row->perjalanan_pulang_selesai = $cuti->perjalanan_pulang_selesai ?? null;
+                $row->alasan_cuti = $cuti->alasan_cuti ?? null;
+
+                // DATA DETAIL SPPD
+                $sppd = null;
+
+                if ($row->jenis === 'SPPD') {
+                    $sppd = DB::table('tb_absen_sppd')
+                        ->where('absen_id', $row->id)
+                        ->first();
+                }
+
+                $row->tanggal_surat = $sppd->tanggal_surat ?? null;
+                $row->perihal_pekerjaan = $sppd->perihal_pekerjaan ?? null;
+                $row->lokasi_pekerjaan = $sppd->lokasi_pekerjaan ?? null;
+                $row->tanggal_mulai_penugasan = $sppd->tanggal_mulai_penugasan ?? null;
+                $row->tanggal_selesai_penugasan = $sppd->tanggal_selesai_penugasan ?? null;
+
+                $row->sppd_karyawan = [];
+
+                if ($row->jenis === 'SPPD') {
+                    $row->sppd_karyawan = DB::table('tb_absen_sppd_karyawan')
+                        ->where('absen_id', $row->id)
+                        ->orderBy('id')
+                        ->get([
+                            'nik',
+                            'nama',
+                            'position',
+                            'kota_asal',
+                            'kota_tujuan',
+                        ]);
+                }
+
+                // DATA DETAIL SAKIT
+                $sakit = null;
+
+                if ($row->jenis === 'Sakit') {
+                    $sakit = DB::table('tb_absen_sakit')
+                        ->where('absen_id', $row->id)
+                        ->first();
+                }
+
+                $row->surat_dokter_path = $sakit->surat_dokter_path
+                    ?? $row->surat_dokter_path_utama;
+
+                unset($row->surat_dokter_path_utama);
+
                 return $row;
             });
 
@@ -395,67 +468,11 @@ class AjaxController extends Controller
         ]);
     }
 
-    public function absen_save(Request $request)
+    public function absen_nomor_dokumen()
     {
-        abort_unless(!Auth::user()->isHcm(), 403);
-
-        $data = $request->validate([
-            'id'              => 'nullable|integer|exists:tb_absen,id',
-            'jenis'           => 'required|in:SPPD,Sakit,Cuti',
-            'tanggal_mulai'   => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'keterangan'      => 'required|string|max:5000',
-        ], [
-            'jenis.required'                 => 'Jenis absen wajib dipilih!',
-            'jenis.in'                       => 'Jenis harus SPPD, Sakit, atau Cuti!',
-            'tanggal_mulai.required'         => 'Tanggal mulai wajib diisi!',
-            'tanggal_selesai.required'       => 'Tanggal selesai wajib diisi!',
-            'tanggal_selesai.after_or_equal' => 'Tanggal selesai tidak boleh sebelum tanggal mulai!',
-            'keterangan.required'            => 'Keterangan wajib diisi!',
-        ]);
-
-        $nik = Auth::user()->nik;
-
-        $values = [
-            'jenis'           => $data['jenis'],
-            'tanggal_mulai'   => $data['tanggal_mulai'],
-            'tanggal_selesai' => $data['tanggal_selesai'],
-            'keterangan'      => $data['keterangan'],
-            'updated_at'      => now(),
-        ];
-
-        if (!empty($data['id'])) {
-            $existing = DB::table('tb_absen')
-                ->where('id', $data['id'])
-                ->where('nik_karyawan', $nik)
-                ->first();
-
-            if (!$existing) {
-                return response()->json([
-                    'message' => 'Pengajuan tidak ditemukan atau bukan milik Anda.',
-                ], 403);
-            }
-
-            if ($existing->status !== 'Menunggu') {
-                return response()->json([
-                    'message' => 'Pengajuan yang sudah diproses tidak dapat diedit.',
-                ], 422);
-            }
-
-            DB::table('tb_absen')
-                ->where('id', $data['id'])
-                ->where('nik_karyawan', $nik)
-                ->where('status', 'Menunggu')
-                ->update($values);
-
-            return response()->json([
-                'message' => 'Pengajuan berhasil diperbarui.',
-            ]);
-        }
-
         $datePart = now()->format('Ymd');
 
-        $sequence = DB::table('tb_absen')
+        $sequence = (int) DB::table('tb_absen')
             ->where('nomor_dokumen', 'like', "ABS-{$datePart}-%")
             ->count() + 1;
 
@@ -470,15 +487,355 @@ class AjaxController extends Controller
             $sequence++;
         } while ($exists);
 
-        $values['nik_karyawan'] = $nik;
-        $values['nomor_dokumen'] = $nomorDokumen;
-        $values['status'] = 'Menunggu';
-        $values['created_at'] = now();
+        return response()->json([
+            'nomor_dokumen' => $nomorDokumen,
+        ]);
+    }
 
-        DB::table('tb_absen')->insert($values);
+        public function absen_save(Request $request)
+    {
+        abort_unless(!Auth::user()->isHcm(), 403);
+
+        $data = $request->validate([
+            'id' => 'nullable|integer|exists:tb_absen,id',
+
+            'jenis' => 'required|in:SPPD,Sakit,Cuti',
+
+            // FORM CUTI
+            'jenis_cuti' => 'required_if:jenis,Cuti|nullable|in:Tahunan,Besar,CAP,Sakit,Bersalin,Haid',
+            'band' => 'nullable|string|max:100',
+            'jabatan' => 'nullable|string|max:150',
+            'unit_kerja' => 'nullable|string|max:150',
+            'cuti_tanggal_mulai' => 'required_if:jenis,Cuti|nullable|date',
+            'cuti_tanggal_selesai' => 'required_if:jenis,Cuti|nullable|date|after_or_equal:cuti_tanggal_mulai',
+            'alamat_selama_cuti' => 'required_if:jenis,Cuti|nullable|string|max:5000',
+            'telepon_cuti' => 'required_if:jenis,Cuti|nullable|string|max:20',
+            'perjalanan_berangkat_mulai' => 'nullable|date',
+            'perjalanan_berangkat_selesai' => 'nullable|date|after_or_equal:perjalanan_berangkat_mulai',
+            'perjalanan_pulang_mulai' => 'nullable|date',
+            'perjalanan_pulang_selesai' => 'nullable|date|after_or_equal:perjalanan_pulang_mulai',
+            'alasan_cuti' => 'required_if:jenis,Cuti|nullable|string|max:5000',
+
+            // FORM SPPD
+            'tanggal_surat' => 'required_if:jenis,SPPD|nullable|date',
+            'perihal_pekerjaan' => 'required_if:jenis,SPPD|nullable|string|max:255',
+            'lokasi_pekerjaan' => 'required_if:jenis,SPPD|nullable|string|max:255',
+            'sppd_tanggal_mulai' => 'required_if:jenis,SPPD|nullable|date',
+            'sppd_tanggal_selesai' => 'required_if:jenis,SPPD|nullable|date|after_or_equal:sppd_tanggal_mulai',
+            'sppd_karyawan' => 'nullable|array|max:3',
+            'sppd_karyawan.*.nik' => 'nullable|string|max:30',
+            'sppd_karyawan.*.nama' => 'nullable|string|max:150',
+            'sppd_karyawan.*.position' => 'nullable|string|max:150',
+            'sppd_karyawan.*.kota_asal' => 'nullable|string|max:150',
+            'sppd_karyawan.*.kota_tujuan' => 'nullable|string|max:150',
+
+            // FORM SAKIT
+            'tanggal_mulai' => 'required_if:jenis,Sakit|nullable|date',
+            'tanggal_selesai' => 'required_if:jenis,Sakit|nullable|date|after_or_equal:tanggal_mulai',
+            'keterangan' => 'required_if:jenis,Sakit|nullable|string|max:5000',
+            'surat_dokter' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        ], [
+            'jenis.required' => 'Jenis absen wajib dipilih!',
+            'jenis.in' => 'Jenis absen tidak valid!',
+
+            'jenis_cuti.required_if' => 'Jenis cuti wajib dipilih!',
+            'cuti_tanggal_mulai.required_if' => 'Tanggal mulai cuti wajib diisi!',
+            'cuti_tanggal_selesai.required_if' => 'Tanggal selesai cuti wajib diisi!',
+            'cuti_tanggal_selesai.after_or_equal' => 'Tanggal selesai cuti tidak boleh sebelum tanggal mulai!',
+            'alamat_selama_cuti.required_if' => 'Alamat selama cuti wajib diisi!',
+            'telepon_cuti.required_if' => 'Nomor telepon selama cuti wajib diisi!',
+            'alasan_cuti.required_if' => 'Alasan cuti wajib diisi!',
+
+            'tanggal_surat.required_if' => 'Tanggal surat wajib diisi!',
+            'perihal_pekerjaan.required_if' => 'Perihal pekerjaan wajib diisi!',
+            'lokasi_pekerjaan.required_if' => 'Lokasi pekerjaan wajib diisi!',
+            'sppd_tanggal_mulai.required_if' => 'Tanggal mulai penugasan wajib diisi!',
+            'sppd_tanggal_selesai.required_if' => 'Tanggal selesai penugasan wajib diisi!',
+            'sppd_tanggal_selesai.after_or_equal' => 'Tanggal selesai penugasan tidak boleh sebelum tanggal mulai!',
+
+            'tanggal_mulai.required_if' => 'Tanggal mulai sakit wajib diisi!',
+            'tanggal_selesai.required_if' => 'Tanggal selesai sakit wajib diisi!',
+            'tanggal_selesai.after_or_equal' => 'Tanggal selesai sakit tidak boleh sebelum tanggal mulai!',
+            'keterangan.required_if' => 'Keterangan sakit wajib diisi!',
+            'surat_dokter.mimes' => 'Surat dokter harus berformat PDF, JPG, JPEG, atau PNG!',
+            'surat_dokter.max' => 'Ukuran surat dokter maksimal 2 MB!',
+        ]);
+
+        if ($data['jenis'] === 'Cuti') {
+            $tanggalMulaiCuti = new \DateTimeImmutable($data['cuti_tanggal_mulai']);
+            $tanggalSelesaiCuti = new \DateTimeImmutable($data['cuti_tanggal_selesai']);
+            $data['lama_cuti'] = (int) $tanggalMulaiCuti->diff($tanggalSelesaiCuti)->days + 1;
+        }
+
+        $nik = Auth::user()->nik;
+        $id = $data['id'] ?? null;
+
+        // Periksa pengajuan jika sedang diedit.
+        $existing = null;
+
+        if ($id) {
+            $existing = DB::table('tb_absen')
+                ->where('id', $id)
+                ->where('nik_karyawan', $nik)
+                ->first();
+
+            if (!$existing) {
+                return response()->json([
+                    'message' => 'Pengajuan tidak ditemukan atau bukan milik Anda.',
+                ], 403);
+            }
+
+            if ($existing->status !== 'Menunggu') {
+                return response()->json([
+                    'message' => 'Pengajuan yang sudah diproses tidak dapat diedit.',
+                ], 422);
+            }
+        }
+
+        // Periksa kelengkapan setiap baris karyawan SPPD.
+        $sppdKaryawan = [];
+
+        if (($data['jenis'] ?? null) === 'SPPD') {
+            foreach (($data['sppd_karyawan'] ?? []) as $index => $pegawai) {
+                $fields = [
+                    'nik',
+                    'nama',
+                    'position',
+                    'kota_asal',
+                    'kota_tujuan',
+                ];
+
+                $hasValue = false;
+
+                foreach ($fields as $field) {
+                    if (trim((string) ($pegawai[$field] ?? '')) !== '') {
+                        $hasValue = true;
+                        break;
+                    }
+                }
+
+                if (!$hasValue) {
+                    continue;
+                }
+
+                foreach ($fields as $field) {
+                    if (trim((string) ($pegawai[$field] ?? '')) === '') {
+                        return response()->json([
+                            'message' => 'Data karyawan SPPD pada baris ' . ($index + 1)
+                                . ' belum lengkap. Lengkapi NIK, nama, posisi, kota asal, dan kota tujuan.',
+                        ], 422);
+                    }
+                }
+
+                $sppdKaryawan[] = [
+                    'nik' => $pegawai['nik'],
+                    'nama' => $pegawai['nama'],
+                    'position' => $pegawai['position'],
+                    'kota_asal' => $pegawai['kota_asal'],
+                    'kota_tujuan' => $pegawai['kota_tujuan'],
+                ];
+            }
+
+            if (count($sppdKaryawan) === 0) {
+                return response()->json([
+                    'message' => 'Minimal satu karyawan yang ditugaskan wajib diisi.',
+                ], 422);
+            }
+        }
+
+        $oldSuratPath = null;
+
+        $result = DB::transaction(function () use (
+            $request,
+            $data,
+            $nik,
+            $id,
+            $existing,
+            $sppdKaryawan,
+            &$oldSuratPath
+        ) {
+            $now = now();
+
+            // Ambil file surat dokter sebelumnya.
+            if ($existing) {
+                $oldSuratPath = $existing->surat_dokter_path;
+
+                if ($existing->jenis === 'Sakit') {
+                    $oldDetail = DB::table('tb_absen_sakit')
+                        ->where('absen_id', $existing->id)
+                        ->first();
+
+                    $oldSuratPath = $oldDetail->surat_dokter_path
+                        ?? $oldSuratPath;
+                }
+            }
+
+            // Tentukan tanggal utama sesuai jenis pengajuan.
+            if ($data['jenis'] === 'Cuti') {
+                $tanggalMulai = $data['cuti_tanggal_mulai'];
+                $tanggalSelesai = $data['cuti_tanggal_selesai'];
+                $keterangan = $data['alasan_cuti'];
+            } elseif ($data['jenis'] === 'SPPD') {
+                $tanggalMulai = $data['sppd_tanggal_mulai'];
+                $tanggalSelesai = $data['sppd_tanggal_selesai'];
+                $keterangan = $data['perihal_pekerjaan'];
+            } else {
+                $tanggalMulai = $data['tanggal_mulai'];
+                $tanggalSelesai = $data['tanggal_selesai'];
+                $keterangan = $data['keterangan'];
+            }
+
+            // Siapkan nomor dokumen.
+            if ($existing) {
+                $nomorDokumen = $existing->nomor_dokumen;
+            } else {
+                $datePart = $now->format('Ymd');
+
+                $sequence = (int) DB::table('tb_absen')
+                    ->where('nomor_dokumen', 'like', "ABS-{$datePart}-%")
+                    ->count() + 1;
+
+                do {
+                    $nomorDokumen = 'ABS-' . $datePart . '-'
+                        . str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
+
+                    $exists = DB::table('tb_absen')
+                        ->where('nomor_dokumen', $nomorDokumen)
+                        ->exists();
+
+                    $sequence++;
+                } while ($exists);
+            }
+
+            // Simpan file surat dokter jika ada unggahan baru.
+            $suratDokterPath = $oldSuratPath;
+
+            if ($request->hasFile('surat_dokter')) {
+                $suratDokterPath = $request->file('surat_dokter')
+                    ->store('absen/surat-dokter', 'local');
+            }
+
+            if ($data['jenis'] !== 'Sakit') {
+                $suratDokterPath = null;
+            }
+
+            $values = [
+                'nik_karyawan' => $nik,
+                'jenis' => $data['jenis'],
+                'tanggal_mulai' => $tanggalMulai,
+                'tanggal_selesai' => $tanggalSelesai,
+                'nomor_dokumen' => $nomorDokumen,
+                'status' => 'Menunggu',
+                'keterangan' => $keterangan,
+                'keterangan_admin' => null,
+                'pdf_path' => null,
+                'surat_dokter_path' => $suratDokterPath,
+                'updated_at' => $now,
+            ];
+
+            if ($existing) {
+                DB::table('tb_absen')
+                    ->where('id', $id)
+                    ->where('nik_karyawan', $nik)
+                    ->where('status', 'Menunggu')
+                    ->update($values);
+
+                $absenId = (int) $id;
+            } else {
+                $values['created_at'] = $now;
+
+                $absenId = (int) DB::table('tb_absen')->insertGetId($values);
+            }
+
+            // Hapus detail lama agar tidak ada data jenis sebelumnya.
+            DB::table('tb_absen_cuti')->where('absen_id', $absenId)->delete();
+            DB::table('tb_absen_sppd')->where('absen_id', $absenId)->delete();
+            DB::table('tb_absen_sppd_karyawan')->where('absen_id', $absenId)->delete();
+            DB::table('tb_absen_sakit')->where('absen_id', $absenId)->delete();
+
+            // SIMPAN DETAIL CUTI
+            if ($data['jenis'] === 'Cuti') {
+                DB::table('tb_absen_cuti')->insert([
+                    'absen_id' => $absenId,
+                    'jenis_cuti' => $data['jenis_cuti'],
+                    'lama_cuti' => $data['lama_cuti'],
+                    'band' => $data['band'] ?? null,
+                    'jabatan' => $data['jabatan'] ?? null,
+                    'unit_kerja' => $data['unit_kerja'] ?? null,
+                    'tanggal_mulai' => $data['cuti_tanggal_mulai'],
+                    'tanggal_selesai' => $data['cuti_tanggal_selesai'],
+                    'alamat_selama_cuti' => $data['alamat_selama_cuti'],
+                    'telepon_cuti' => $data['telepon_cuti'],
+                    'perjalanan_berangkat_mulai' => $data['perjalanan_berangkat_mulai'] ?? null,
+                    'perjalanan_berangkat_selesai' => $data['perjalanan_berangkat_selesai'] ?? null,
+                    'perjalanan_pulang_mulai' => $data['perjalanan_pulang_mulai'] ?? null,
+                    'perjalanan_pulang_selesai' => $data['perjalanan_pulang_selesai'] ?? null,
+                    'alasan_cuti' => $data['alasan_cuti'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+
+            // SIMPAN DETAIL SPPD
+            if ($data['jenis'] === 'SPPD') {
+                DB::table('tb_absen_sppd')->insert([
+                    'absen_id' => $absenId,
+                    'tanggal_surat' => $data['tanggal_surat'],
+                    'perihal_pekerjaan' => $data['perihal_pekerjaan'],
+                    'lokasi_pekerjaan' => $data['lokasi_pekerjaan'],
+                    'tanggal_mulai_penugasan' => $data['sppd_tanggal_mulai'],
+                    'tanggal_selesai_penugasan' => $data['sppd_tanggal_selesai'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                foreach ($sppdKaryawan as $pegawai) {
+                    DB::table('tb_absen_sppd_karyawan')->insert([
+                        'absen_id' => $absenId,
+                        'nik' => $pegawai['nik'],
+                        'nama' => $pegawai['nama'],
+                        'position' => $pegawai['position'],
+                        'kota_asal' => $pegawai['kota_asal'],
+                        'kota_tujuan' => $pegawai['kota_tujuan'],
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+                }
+            }
+
+            // SIMPAN DETAIL SAKIT
+            if ($data['jenis'] === 'Sakit') {
+                DB::table('tb_absen_sakit')->insert([
+                    'absen_id' => $absenId,
+                    'surat_dokter_path' => $suratDokterPath,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+
+            return [
+                'id' => $absenId,
+                'nomor_dokumen' => $nomorDokumen,
+            ];
+        });
+
+        // Hapus surat dokter lama jika diganti atau jenis pengajuan berubah.
+        if (
+            $oldSuratPath &&
+            (
+                $data['jenis'] !== 'Sakit' ||
+                $request->hasFile('surat_dokter')
+            )
+        ) {
+            Storage::disk('local')->delete($oldSuratPath);
+        }
 
         return response()->json([
-            'message' => 'Pengajuan berhasil disimpan.',
+            'message' => $id
+                ? 'Pengajuan berhasil diperbarui.'
+                : 'Pengajuan berhasil diajukan.',
+            'id' => $result['id'],
+            'nomor_dokumen' => $result['nomor_dokumen'],
         ]);
     }
 
@@ -531,24 +888,169 @@ class AjaxController extends Controller
             'keterangan_admin.required' => 'Keterangan dari HCM wajib diisi!',
         ]);
 
-        $updated = DB::table('tb_absen')
-            ->where('id', $data['id'])
-            ->where('status', 'Menunggu')
-            ->update([
-                'status' => 'Disetujui',
-                'keterangan_admin' => $data['keterangan_admin'],
-                'updated_at' => now(),
+        $pdfPath = null;
+
+        try {
+            $result = DB::transaction(function () use ($data, &$pdfPath) {
+
+                // Ambil pengajuan yang masih menunggu persetujuan.
+                $absen = DB::table('tb_absen')
+                    ->where('id', $data['id'])
+                    ->where('status', 'Menunggu')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$absen) {
+                    return false;
+                }
+
+                // Ambil data karyawan.
+                $karyawan = DB::table('tb_employee')
+                    ->where('nik', $absen->nik_karyawan)
+                    ->first();
+
+                if (!$karyawan) {
+                    throw new \RuntimeException('Data karyawan tidak ditemukan.');
+                }
+
+                // Tentukan template PDF berdasarkan jenis pengajuan.
+                switch ($absen->jenis) {
+
+                    case 'Cuti':
+                        $cuti = DB::table('tb_absen_cuti')
+                            ->where('absen_id', $absen->id)
+                            ->first();
+
+                        if (!$cuti) {
+                            throw new \RuntimeException('Data detail cuti tidak ditemukan.');
+                        }
+
+                        $pdfContents = AbsenPdfGenerator::cuti($absen, $karyawan, $cuti);
+
+                        break;
+
+                    case 'SPPD':
+                        $sppd = DB::table('tb_absen_sppd')
+                            ->where('absen_id', $absen->id)
+                            ->first();
+
+                        if (!$sppd) {
+                            throw new \RuntimeException('Data detail SPPD tidak ditemukan.');
+                        }
+
+                        $sppdKaryawan = DB::table('tb_absen_sppd_karyawan')
+                            ->where('absen_id', $absen->id)
+                            ->orderBy('id')
+                            ->get();
+
+                        $pdfContents = AbsenPdfGenerator::sppd($sppd, $sppdKaryawan);
+
+                        break;
+
+                    case 'Sakit':
+                        $pdf = Pdf::loadView(
+                            'operasional.pdf.sakit',
+                            [
+                                'absen' => $absen,
+                                'karyawan' => $karyawan,
+                            ]
+                        );
+
+                        $pdf->setPaper('a4', 'portrait');
+                        $pdfContents = $pdf->output();
+                        break;
+
+                    default:
+                        throw new \RuntimeException('Jenis pengajuan tidak dikenali.');
+                }
+
+                // Simpan hasil PDF dari template Word (atau dari view untuk jenis sakit).
+                $pdfPath = 'absen/pdf/' . $absen->nomor_dokumen . '.pdf';
+
+                $saved = Storage::disk('local')->put(
+                    $pdfPath,
+                    $pdfContents
+                );
+
+                if (!$saved) {
+                    throw new \RuntimeException('PDF gagal disimpan.');
+                }
+
+                // Status berubah setelah PDF berhasil disimpan.
+                DB::table('tb_absen')
+                    ->where('id', $absen->id)
+                    ->where('status', 'Menunggu')
+                    ->update([
+                        'status' => 'Disetujui',
+                        'keterangan_admin' => $data['keterangan_admin'],
+                        'pdf_path' => $pdfPath,
+                        'updated_at' => now(),
+                    ]);
+
+                return true;
+            });
+
+            if ($result === false) {
+                return response()->json([
+                    'message' => 'Pengajuan tidak ditemukan atau sudah diproses sebelumnya.',
+                ], 422);
+            }
+
+            return response()->json([
+                'message' => 'Pengajuan berhasil disetujui dan PDF berhasil dibuat.',
             ]);
 
-        if ($updated === 0) {
+        } catch (\Throwable $e) {
+
+            // Hapus file jika proses persetujuan mengalami kegagalan.
+            if ($pdfPath && Storage::disk('local')->exists($pdfPath)) {
+                Storage::disk('local')->delete($pdfPath);
+            }
+
+            report($e);
+
             return response()->json([
-                'message' => 'Pengajuan tidak ditemukan atau sudah diproses sebelumnya.',
-            ], 422);
+                'message' => 'Persetujuan gagal. PDF tidak berhasil dibuat. Periksa konfigurasi template dan logo.',
+            ], 500);
+        }
+    }
+
+    public function absen_download($id)
+    {
+        // Cari data pengajuan.
+        $absen = DB::table('tb_absen')
+            ->where('id', $id)
+            ->first();
+
+        if (!$absen) {
+            abort(404, 'Data pengajuan tidak ditemukan.');
         }
 
-        return response()->json([
-            'message' => 'Pengajuan berhasil disetujui.',
-        ]);
+        // Hanya HCM atau karyawan pemilik pengajuan yang boleh mengunduh.
+        $isHcm = Auth::user()->isHcm();
+
+        $isOwner = (string) Auth::user()->nik === (string) $absen->nik_karyawan;
+
+        abort_unless($isHcm || $isOwner, 403);
+
+        // PDF hanya tersedia untuk pengajuan yang disetujui.
+        abort_unless(
+            $absen->status === 'Disetujui'
+            && !empty($absen->pdf_path),
+            404,
+            'PDF belum tersedia.'
+        );
+
+        // Pastikan file PDF benar-benar tersedia.
+        if (!Storage::disk('local')->exists($absen->pdf_path)) {
+            abort(404, 'File PDF tidak ditemukan.');
+        }
+
+        // Unduh PDF.
+        return Storage::disk('local')->download(
+            $absen->pdf_path,
+            $absen->nomor_dokumen . '.pdf'
+        );
     }
 
     public function absen_reject(Request $request)
