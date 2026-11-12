@@ -67,11 +67,11 @@ Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(
         Route::post('absen/list', [AjaxController::class, 'absen_list'])->name('absen.list');
         Route::post('absen/save', [AjaxController::class, 'absen_save'])->name('absen.save');
         Route::post('absen/delete', [AjaxController::class, 'absen_delete'])->name('absen.delete');
-
+        
         Route::post('absen/approve', [AjaxController::class, 'absen_approve'])
-            ->middleware('role.hcm')
-            ->name('absen.approve');
-
+        ->middleware('role.hcm')
+        ->name('absen.approve');
+        
         Route::post('absen/reject', [AjaxController::class, 'absen_reject'])
             ->middleware('role.hcm')
             ->name('absen.reject');
@@ -84,5 +84,5 @@ Route::prefix('ajax')->name('ajax.')->middleware(['auth', 'data.guard'])->group(
         Route::post('sto/markers', [AjaxController::class, 'sto_markers'])->name('sto.markers');
         Route::post('sto/save', [AjaxController::class, 'sto_save'])->name('sto.save');
         Route::post('sto/delete', [AjaxController::class, 'sto_delete'])->name('sto.delete');
-    });
+        });
 });

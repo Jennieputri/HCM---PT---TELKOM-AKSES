@@ -2,31 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AbsenModel;
+use App\Models\AdministratorModel;
 use App\Models\AuthModel;
 use App\Models\HomeModel;
 use App\Models\OperasionalModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class AjaxController extends Controller
 {
-    private const ABSEN_SORTABLE_COLUMNS = [
-        'tb_employee.name',
-        'tb_absen.jenis',
-        'tb_absen.tanggal_mulai',
-        'tb_absen.status',
-    ];
-
-    private const ABSEN_FILTER_RULES = [
-        'karyawan'          => 'nullable|string|max:100',
-        'jenis'             => 'nullable|in:SPPD,Sakit,Cuti',
-        'tanggal_mulai'     => 'nullable|date',
-        'tanggal_selesai'   => 'nullable|date|after_or_equal:filters.tanggal_mulai',
-        'status'            => 'nullable|in:Menunggu,Disetujui,Ditolak',
-    ];
-
     private const APPROVAL_SORTABLE_COLUMNS = [
         'tb_employee.name',
         'tb_employee.created_at',
@@ -143,8 +129,7 @@ class AjaxController extends Controller
             Auth::id(),
         );
 
-        if ($approvedRows === 0)
-        {
+        if ($approvedRows === 0) {
             return response()->json([
                 'message' => 'Akun ini tidak sedang menunggu persetujuan.',
             ], 422);
@@ -168,8 +153,7 @@ class AjaxController extends Controller
             Auth::id(),
         );
 
-        if ($rejectedRows === 0)
-        {
+        if ($rejectedRows === 0) {
             return response()->json([
                 'message' => 'Akun ini tidak sedang menunggu persetujuan.',
             ], 422);
@@ -229,8 +213,7 @@ class AjaxController extends Controller
             'id' => 'required|integer|exists:tb_employee,id',
         ]);
 
-        if ((int) $request->id === (int) Auth::id())
-        {
+        if ((int) $request->id === (int) Auth::id()) {
             return response()->json([
                 'message' => 'Akun yang sedang Anda pakai tidak bisa dihapus.',
             ], 422);
@@ -292,8 +275,7 @@ class AjaxController extends Controller
             'id' => 'required|integer|exists:tb_role,id',
         ]);
 
-        if (AdministratorModel::isRoleUsed($request->id))
-        {
+        if (AdministratorModel::isRoleUsed($request->id)) {
             return response()->json([
                 'message' => 'Role masih dipakai karyawan, tidak bisa dihapus.',
             ], 422);
@@ -347,28 +329,75 @@ class AjaxController extends Controller
 
     public function absen_list(Request $request)
     {
-        $table   = $this->readDataTableRequest($request, self::ABSEN_SORTABLE_COLUMNS);
-        $filters = $this->readFilters($request, self::ABSEN_FILTER_RULES);
+        $request->validate([
+            'draw'         => 'required|integer|min:0',
+            'start'        => 'required|integer|min:0',
+            'length'       => 'required|integer|min:1|max:100',
+            'search.value' => 'nullable|string|max:100',
+        ]);
 
-        $user   = Auth::user();
-        $result = AbsenModel::absenList($table, $filters);
+        $user = Auth::user();
+        $isHcm = $user->isHcm();
 
-        if (! $user->isHcm())
-        {
-            $result['rows'] = $result['rows']->filter(function ($row) use ($user)
-            {
-                return $row->nik_karyawan == $user->nik;
-            })->values();
+        $query = DB::table('tb_absen')
+            ->join('tb_employee', 'tb_absen.nik_karyawan', '=', 'tb_employee.nik')
+            ->select(
+                'tb_absen.id',
+                'tb_absen.nik_karyawan',
+                'tb_employee.name as nama_karyawan',
+                'tb_absen.jenis',
+                'tb_absen.tanggal_mulai',
+                'tb_absen.tanggal_selesai',
+                'tb_absen.nomor_dokumen',
+                'tb_absen.status',
+                'tb_absen.keterangan',
+                'tb_absen.keterangan_admin',
+                'tb_absen.created_at'
+            );
 
-            $result['filteredRows'] = $result['rows']->count();
+        if (!$isHcm) {
+            $query->where('tb_absen.nik_karyawan', $user->nik);
         }
 
-        return $this->dataTableResponse($table['draw'], $result);
+        $total = (clone $query)->count();
+
+        $keyword = trim((string) $request->input('search.value', ''));
+
+        if ($keyword !== '') {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('tb_employee.name', 'like', "%{$keyword}%")
+                    ->orWhere('tb_absen.nik_karyawan', 'like', "%{$keyword}%")
+                    ->orWhere('tb_absen.nomor_dokumen', 'like', "%{$keyword}%")
+                    ->orWhere('tb_absen.jenis', 'like', "%{$keyword}%")
+                    ->orWhere('tb_absen.status', 'like', "%{$keyword}%");
+            });
+        }
+
+        $filtered = (clone $query)->count();
+
+        $rows = $query
+            ->orderByDesc('tb_absen.id')
+            ->offset((int) $request->start)
+            ->limit((int) $request->length)
+            ->get()
+            ->map(function ($row) {
+                $row->karyawan = $row->nama_karyawan
+                    . ' (' . $row->nik_karyawan . ')';
+
+                return $row;
+            });
+
+        return response()->json([
+            'draw'            => (int) $request->draw,
+            'recordsTotal'    => $total,
+            'recordsFiltered' => $filtered,
+            'data'            => $rows,
+        ]);
     }
 
     public function absen_save(Request $request)
     {
-        abort_unless(! Auth::user()->isHcm(), 403);
+        abort_unless(!Auth::user()->isHcm(), 403);
 
         $data = $request->validate([
             'id'              => 'nullable|integer|exists:tb_absen,id',
@@ -385,59 +414,68 @@ class AjaxController extends Controller
             'keterangan.required'            => 'Keterangan wajib diisi!',
         ]);
 
-        $userNik = Auth::user()->nik;
+        $nik = Auth::user()->nik;
 
-        $conflictingAbsen = AbsenModel::findExistingAbsen(
-            $userNik,
-            $data['jenis'],
-            $data['tanggal_mulai'],
-            $data['tanggal_selesai'],
-            $data['id'] ?? null
-        );
+        $values = [
+            'jenis'           => $data['jenis'],
+            'tanggal_mulai'   => $data['tanggal_mulai'],
+            'tanggal_selesai' => $data['tanggal_selesai'],
+            'keterangan'      => $data['keterangan'],
+            'updated_at'      => now(),
+        ];
 
-        if ($conflictingAbsen)
-        {
-            return response()->json([
-                'message' => 'Sudah ada pengajuan '.$data['jenis'].' yang tumpang tindih dengan tanggal ini.',
-            ], 422);
-        }
+        if (!empty($data['id'])) {
+            $existing = DB::table('tb_absen')
+                ->where('id', $data['id'])
+                ->where('nik_karyawan', $nik)
+                ->first();
 
-        if (! empty($data['id']))
-        {
-            $existing = AbsenModel::findAbsenById($data['id']);
-
-            if (! $existing || $existing->nik_karyawan != $userNik)
-            {
+            if (!$existing) {
                 return response()->json([
                     'message' => 'Pengajuan tidak ditemukan atau bukan milik Anda.',
                 ], 403);
             }
 
-            AbsenModel::updateAbsen($data['id'], $userNik, [
-                'jenis'           => $data['jenis'],
-                'tanggal_mulai'   => $data['tanggal_mulai'],
-                'tanggal_selesai' => $data['tanggal_selesai'],
-                'keterangan'      => $data['keterangan'],
-                'updated_at'      => now(),
-            ]);
+            if ($existing->status !== 'Menunggu') {
+                return response()->json([
+                    'message' => 'Pengajuan yang sudah diproses tidak dapat diedit.',
+                ], 422);
+            }
+
+            DB::table('tb_absen')
+                ->where('id', $data['id'])
+                ->where('nik_karyawan', $nik)
+                ->where('status', 'Menunggu')
+                ->update($values);
 
             return response()->json([
                 'message' => 'Pengajuan berhasil diperbarui.',
             ]);
         }
 
-        $nomorDokumen = AbsenModel::generateNomorDokumen($data['jenis']);
+        $datePart = now()->format('Ymd');
 
-        AbsenModel::createAbsen([
-            'nik_karyawan'    => $userNik,
-            'jenis'           => $data['jenis'],
-            'tanggal_mulai'   => $data['tanggal_mulai'],
-            'tanggal_selesai' => $data['tanggal_selesai'],
-            'nomor_dokumen'   => $nomorDokumen,
-            'keterangan'      => $data['keterangan'],
-            'status'          => 'Menunggu',
-            'created_at'      => now(),
-        ]);
+        $sequence = DB::table('tb_absen')
+            ->where('nomor_dokumen', 'like', "ABS-{$datePart}-%")
+            ->count() + 1;
+
+        do {
+            $nomorDokumen = 'ABS-' . $datePart . '-'
+                . str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
+
+            $exists = DB::table('tb_absen')
+                ->where('nomor_dokumen', $nomorDokumen)
+                ->exists();
+
+            $sequence++;
+        } while ($exists);
+
+        $values['nik_karyawan'] = $nik;
+        $values['nomor_dokumen'] = $nomorDokumen;
+        $values['status'] = 'Menunggu';
+        $values['created_at'] = now();
+
+        DB::table('tb_absen')->insert($values);
 
         return response()->json([
             'message' => 'Pengajuan berhasil disimpan.',
@@ -446,23 +484,36 @@ class AjaxController extends Controller
 
     public function absen_delete(Request $request)
     {
-        abort_unless(! Auth::user()->isHcm(), 403);
+        abort_unless(!Auth::user()->isHcm(), 403);
 
         $request->validate([
             'id' => 'required|integer|exists:tb_absen,id',
         ]);
 
-        $userNik = Auth::user()->nik;
-        $absen   = AbsenModel::findAbsenById($request->id);
+        $nik = Auth::user()->nik;
 
-        if (! $absen || $absen->nik_karyawan != $userNik)
-        {
+        $absen = DB::table('tb_absen')
+            ->where('id', $request->id)
+            ->where('nik_karyawan', $nik)
+            ->first();
+
+        if (!$absen) {
             return response()->json([
                 'message' => 'Pengajuan tidak ditemukan atau bukan milik Anda.',
             ], 403);
         }
 
-        AbsenModel::deleteAbsen($request->id);
+        if ($absen->status !== 'Menunggu') {
+            return response()->json([
+                'message' => 'Pengajuan yang sudah diproses tidak dapat dihapus.',
+            ], 422);
+        }
+
+        DB::table('tb_absen')
+            ->where('id', $request->id)
+            ->where('nik_karyawan', $nik)
+            ->where('status', 'Menunggu')
+            ->delete();
 
         return response()->json([
             'message' => 'Pengajuan berhasil dihapus.',
@@ -474,16 +525,22 @@ class AjaxController extends Controller
         abort_unless(Auth::user()->isHcm(), 403);
 
         $data = $request->validate([
-            'id'               => 'required|integer|exists:tb_absen,id',
+            'id' => 'required|integer|exists:tb_absen,id',
             'keterangan_admin' => 'required|string|max:5000',
         ], [
             'keterangan_admin.required' => 'Keterangan dari HCM wajib diisi!',
         ]);
 
-        $updated = AbsenModel::approveAbsen($data['id'], $data['keterangan_admin']);
+        $updated = DB::table('tb_absen')
+            ->where('id', $data['id'])
+            ->where('status', 'Menunggu')
+            ->update([
+                'status' => 'Disetujui',
+                'keterangan_admin' => $data['keterangan_admin'],
+                'updated_at' => now(),
+            ]);
 
-        if ($updated === 0)
-        {
+        if ($updated === 0) {
             return response()->json([
                 'message' => 'Pengajuan tidak ditemukan atau sudah diproses sebelumnya.',
             ], 422);
@@ -499,16 +556,22 @@ class AjaxController extends Controller
         abort_unless(Auth::user()->isHcm(), 403);
 
         $data = $request->validate([
-            'id'               => 'required|integer|exists:tb_absen,id',
+            'id' => 'required|integer|exists:tb_absen,id',
             'keterangan_admin' => 'required|string|max:5000',
         ], [
             'keterangan_admin.required' => 'Keterangan dari HCM wajib diisi!',
         ]);
 
-        $updated = AbsenModel::rejectAbsen($data['id'], $data['keterangan_admin']);
+        $updated = DB::table('tb_absen')
+            ->where('id', $data['id'])
+            ->where('status', 'Menunggu')
+            ->update([
+                'status' => 'Ditolak',
+                'keterangan_admin' => $data['keterangan_admin'],
+                'updated_at' => now(),
+            ]);
 
-        if ($updated === 0)
-        {
+        if ($updated === 0) {
             return response()->json([
                 'message' => 'Pengajuan tidak ditemukan atau sudah diproses sebelumnya.',
             ], 422);
@@ -656,9 +719,8 @@ class AjaxController extends Controller
     {
         $rules = [];
 
-        foreach ($filterRules as $fieldName => $rule)
-        {
-            $rules['filters.'.$fieldName] = $rule;
+        foreach ($filterRules as $fieldName => $rule) {
+            $rules['filters.' . $fieldName] = $rule;
         }
 
         $filters = $request->validate($rules)['filters'] ?? [];

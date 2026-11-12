@@ -70,17 +70,6 @@ class AuthController extends Controller
 
     public function register_post(Request $request)
     {
-        $registerLockKey = 'register:'.($request->ip() ?? 'unknown');
-
-        if (RateLimiter::tooManyAttempts($registerLockKey, 5))
-        {
-            $minutesLeft = ceil(RateLimiter::availableIn($registerLockKey) / 60);
-
-            return back()
-                ->withErrors(['register' => 'Terlalu banyak percobaan pendaftaran. Coba lagi dalam '.$minutesLeft.' menit.'])
-                ->onlyInput('nik', 'no_ktp', 'name');
-        }
-
         $request->validate([
             'nik'      => 'required|integer|min:1|max:2147483647',
             'no_ktp'   => ['required', 'regex:/^[0-9]{16}$/'],
@@ -99,12 +88,8 @@ class AuthController extends Controller
 
         if (AuthModel::isNikRegistered($request->nik))
         {
-            RateLimiter::hit($registerLockKey, 300);
-
             return back()->withErrors(['nik' => 'NIK sudah terdaftar!'])->onlyInput('nik', 'name');
         }
-
-        RateLimiter::clear($registerLockKey);
 
         AuthModel::register($request->nik, $request->no_ktp, $request->name, $request->password);
 

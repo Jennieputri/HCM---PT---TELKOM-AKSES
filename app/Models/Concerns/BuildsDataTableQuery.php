@@ -9,11 +9,6 @@ trait BuildsDataTableQuery
 {
     private static function personLabel(string $employeeAlias, string $labelAlias)
     {
-        if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $employeeAlias) || ! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $labelAlias))
-        {
-            throw new \InvalidArgumentException('Invalid SQL identifier');
-        }
-
         return DB::raw("CONCAT({$employeeAlias}.name, ' (', {$employeeAlias}.nik, ')') as {$labelAlias}");
     }
 
@@ -36,13 +31,11 @@ trait BuildsDataTableQuery
             return;
         }
 
-        $escapedKeyword = str_replace(['%', '_'], ['\%', '\_'], $keyword);
-
-        $query->where(function ($filterQuery) use ($columns, $escapedKeyword)
+        $query->where(function ($filterQuery) use ($columns, $keyword)
         {
             foreach ($columns as $column)
             {
-                $filterQuery->orWhere($column, 'like', '%'.$escapedKeyword.'%');
+                $filterQuery->orWhere($column, 'like', '%'.$keyword.'%');
             }
         });
     }
