@@ -318,7 +318,7 @@ $(function ()
     function openFormModal(title)
     {
         $form[0].reset();
-        refreshSelect2($form);
+        refreshFormControls($form);
         $form.find('[name="id"]').val('');
         clearFormErrors($form);
 
@@ -336,7 +336,7 @@ $(function ()
             $form.find('[name="' + fieldName + '"]').val(sto[fieldName]);
         });
 
-        refreshSelect2($form);
+        refreshFormControls($form);
     }
 
     stoMap.on('click', function (event)

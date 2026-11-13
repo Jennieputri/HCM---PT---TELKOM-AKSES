@@ -23,6 +23,7 @@
 			rel="stylesheet"
 			href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
 		/>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" />
 
 		<link rel="stylesheet" href="{{ asset("assets/css/adminlte.min.css") }}" />
 		<link rel="stylesheet" href="{{ asset("assets/css/hcm.css") }}" />
@@ -43,59 +44,11 @@
 					</ul>
 
 					<ul class="navbar-nav ms-auto align-items-center">
-						<li class="nav-item dropdown">
-							<a
-								class="nav-link"
-								href="#"
-								id="theme-menu"
-								role="button"
-								aria-label="Ganti tema warna"
-								data-bs-toggle="dropdown"
-								aria-expanded="false"
-							>
-								<i class="bi bi-sun-fill" data-lte-theme-icon="light" aria-hidden="true"></i>
-								<i class="bi bi-moon-fill d-none" data-lte-theme-icon="dark" aria-hidden="true"></i>
-								<i class="bi bi-circle-half d-none" data-lte-theme-icon="auto" aria-hidden="true"></i>
-							</a>
-
-							<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="theme-menu">
-								<li>
-									<button
-										type="button"
-										class="dropdown-item d-flex align-items-center"
-										data-bs-theme-value="light"
-										aria-pressed="false"
-									>
-										<i class="bi bi-sun-fill me-2" aria-hidden="true"></i>
-										Light
-										<i class="bi bi-check-lg ms-auto d-none" aria-hidden="true"></i>
-									</button>
-								</li>
-								<li>
-									<button
-										type="button"
-										class="dropdown-item d-flex align-items-center"
-										data-bs-theme-value="dark"
-										aria-pressed="false"
-									>
-										<i class="bi bi-moon-fill me-2" aria-hidden="true"></i>
-										Dark
-										<i class="bi bi-check-lg ms-auto d-none" aria-hidden="true"></i>
-									</button>
-								</li>
-								<li>
-									<button
-										type="button"
-										class="dropdown-item d-flex align-items-center"
-										data-bs-theme-value="auto"
-										aria-pressed="false"
-									>
-										<i class="bi bi-circle-half me-2" aria-hidden="true"></i>
-										System
-										<i class="bi bi-check-lg ms-auto d-none" aria-hidden="true"></i>
-									</button>
-								</li>
-							</ul>
+						<li class="nav-item">
+							<button type="button" class="nav-link theme-toggle" id="theme-toggle" aria-label="Ganti ke mode gelap">
+								<i class="bi bi-moon-stars-fill theme-toggle-icon is-moon" aria-hidden="true"></i>
+								<i class="bi bi-sun-fill theme-toggle-icon is-sun" aria-hidden="true"></i>
+							</button>
 						</li>
 
 						@php($userInitial = mb_strtoupper(mb_substr((string) Auth::user()->name, 0, 1)))
@@ -140,7 +93,7 @@
 				</div>
 			</nav>
 
-			<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+			<aside class="app-sidebar">
 				<div class="sidebar-brand">
 					<a href="{{ route("home") }}" class="brand-link">
 						<span class="brand-logo-box">
@@ -159,7 +112,7 @@
 						<ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" data-accordion="false">
 							<li class="nav-item">
 								<a href="{{ route("home") }}" class="nav-link {{ request()->routeIs("home") ? "active" : "" }}">
-									<i class="nav-icon bi bi-house-door"></i>
+									<i class="nav-icon bi bi-house-door tone-rose" aria-hidden="true"></i>
 									<p>Beranda</p>
 								</a>
 							</li>
@@ -171,7 +124,7 @@
 									href="{{ route("operasional.struktur-organisasi") }}"
 									class="nav-link {{ request()->routeIs("operasional.struktur-organisasi") ? "active" : "" }}"
 								>
-									<i class="nav-icon bi bi-diagram-3"></i>
+									<i class="nav-icon bi bi-diagram-3 tone-berry" aria-hidden="true"></i>
 									<p>Struktur Organisasi</p>
 								</a>
 							</li>
@@ -181,7 +134,7 @@
 									href="{{ route("operasional.absen") }}"
 									class="nav-link {{ request()->routeIs("operasional.absen") ? "active" : "" }}"
 								>
-									<i class="nav-icon bi bi-calendar2-check"></i>
+									<i class="nav-icon bi bi-calendar2-check tone-teal" aria-hidden="true"></i>
 									<p>Data Absen</p>
 								</a>
 							</li>
@@ -191,7 +144,7 @@
 									href="{{ route("operasional.alat-kerja") }}"
 									class="nav-link {{ request()->routeIs("operasional.alat-kerja") ? "active" : "" }}"
 								>
-									<i class="nav-icon bi bi-tools"></i>
+									<i class="nav-icon bi bi-tools tone-violet" aria-hidden="true"></i>
 									<p>Data Alat Kerja</p>
 								</a>
 							</li>
@@ -201,7 +154,7 @@
 									href="{{ route("operasional.sto") }}"
 									class="nav-link {{ request()->routeIs("operasional.sto") ? "active" : "" }}"
 								>
-									<i class="nav-icon bi bi-geo-alt"></i>
+									<i class="nav-icon bi bi-geo-alt tone-sky" aria-hidden="true"></i>
 									<p>Data STO</p>
 								</a>
 							</li>
@@ -214,7 +167,7 @@
 										href="{{ route("administrator.approval") }}"
 										class="nav-link {{ request()->routeIs("administrator.approval") ? "active" : "" }}"
 									>
-										<i class="nav-icon bi bi-person-check"></i>
+										<i class="nav-icon bi bi-person-check tone-amber" aria-hidden="true"></i>
 										<p>
 											Persetujuan Akun
 											@if ($pendingApprovalCount > 0)
@@ -231,7 +184,7 @@
 										href="{{ route("administrator.employee") }}"
 										class="nav-link {{ request()->routeIs("administrator.employee") ? "active" : "" }}"
 									>
-										<i class="nav-icon bi bi-people"></i>
+										<i class="nav-icon bi bi-people tone-teal" aria-hidden="true"></i>
 										<p>Data Karyawan</p>
 									</a>
 								</li>
@@ -241,7 +194,7 @@
 										href="{{ route("administrator.role") }}"
 										class="nav-link {{ request()->routeIs("administrator.role") ? "active" : "" }}"
 									>
-										<i class="nav-icon bi bi-shield-lock"></i>
+										<i class="nav-icon bi bi-shield-lock tone-violet" aria-hidden="true"></i>
 										<p>Data Role</p>
 									</a>
 								</li>
@@ -251,7 +204,7 @@
 										href="{{ route("administrator.position") }}"
 										class="nav-link {{ request()->routeIs("administrator.position") ? "active" : "" }}"
 									>
-										<i class="nav-icon bi bi-person-badge"></i>
+										<i class="nav-icon bi bi-person-badge tone-berry" aria-hidden="true"></i>
 										<p>Data Position</p>
 									</a>
 								</li>
@@ -331,10 +284,13 @@
 		<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/id.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/id.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/datatables.net@2.1.8/js/dataTables.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@2.1.8/js/dataTables.bootstrap5.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
 		<script src="{{ asset("assets/js/hcm-ajax.js") }}"></script>
+		<script src="{{ asset("assets/js/theme-toggle.js") }}"></script>
 		@stack("scripts")
 	</body>
 </html>

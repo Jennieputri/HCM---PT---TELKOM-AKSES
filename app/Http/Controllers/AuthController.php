@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\BindSessionToClient;
 use App\Models\AuthModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -59,6 +60,7 @@ class AuthController extends Controller
 
         Auth::login($employee);
         $request->session()->regenerate();
+        BindSessionToClient::bind($request);
 
         return redirect()->route('home');
     }

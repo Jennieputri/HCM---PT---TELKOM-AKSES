@@ -28,9 +28,6 @@
 					Buka Peta STO
 				</a>
 			</div>
-
-			<span class="dashboard-hero-orbit is-large" aria-hidden="true"></span>
-			<span class="dashboard-hero-orbit is-small" aria-hidden="true"></span>
 		</section>
 
 		@php($statTileColumn = $isHcm ? "col-12 col-sm-6 col-xl-3" : "col-12 col-md-4")
@@ -38,7 +35,7 @@
 		<section class="row g-3 mb-3" aria-label="Indikator utama">
 			@if ($isHcm)
 				<div class="{{ $statTileColumn }}">
-					<article class="stat-tile reveal">
+					<article class="stat-tile tone-teal reveal">
 						<span class="stat-tile-icon" aria-hidden="true"><i class="bi bi-people-fill"></i></span>
 						<p class="stat-tile-label">Karyawan Aktif</p>
 						<p class="stat-tile-value" data-count-up="employees.active">0</p>
@@ -52,7 +49,7 @@
 			@endif
 
 			<div class="{{ $statTileColumn }}">
-				<article class="stat-tile reveal">
+				<article class="stat-tile tone-violet reveal">
 					<span class="stat-tile-icon" aria-hidden="true"><i class="bi bi-tools"></i></span>
 					<p class="stat-tile-label">Alat Kerja Dipinjam</p>
 					<p class="stat-tile-value" data-count-up="alat_kerja.borrowed">0</p>
@@ -65,7 +62,7 @@
 			</div>
 
 			<div class="{{ $statTileColumn }}">
-				<article class="stat-tile reveal">
+				<article class="stat-tile tone-sky reveal">
 					<span class="stat-tile-icon" aria-hidden="true"><i class="bi bi-broadcast-pin"></i></span>
 					<p class="stat-tile-label">STO Aktif</p>
 					<p class="stat-tile-value" data-count-up="sto.active">0</p>
@@ -79,14 +76,14 @@
 
 			<div class="{{ $statTileColumn }}">
 				@if ($isHcm)
-					<a href="{{ route("administrator.approval") }}" class="stat-tile is-link reveal">
-						<span class="stat-tile-icon is-warning" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+					<a href="{{ route("administrator.approval") }}" class="stat-tile tone-amber is-link reveal">
+						<span class="stat-tile-icon" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
 						<p class="stat-tile-label">Menunggu Persetujuan</p>
 						<p class="stat-tile-value" data-count-up="administration.pending_approvals">0</p>
 						<p class="stat-tile-caption">pendaftar baru perlu ditinjau</p>
 					</a>
 				@else
-					<article class="stat-tile reveal">
+					<article class="stat-tile tone-berry reveal">
 						<span class="stat-tile-icon" aria-hidden="true"><i class="bi bi-pin-map"></i></span>
 						<p class="stat-tile-label">Kecamatan Terlayani</p>
 						<p class="stat-tile-value" data-count-up="sto.kecamatan">0</p>
@@ -165,17 +162,17 @@
 							</header>
 
 							<div class="master-data-list">
-								<a href="{{ route("administrator.employee") }}" class="master-data-item">
+								<a href="{{ route("administrator.employee") }}" class="master-data-item tone-teal">
 									<span class="master-data-icon" aria-hidden="true"><i class="bi bi-people"></i></span>
 									<span class="master-data-label">Karyawan</span>
 									<span class="master-data-value" data-count-up="employees.total">0</span>
 								</a>
-								<a href="{{ route("administrator.role") }}" class="master-data-item">
+								<a href="{{ route("administrator.role") }}" class="master-data-item tone-violet">
 									<span class="master-data-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
 									<span class="master-data-label">Role</span>
 									<span class="master-data-value" data-count-up="administration.roles">0</span>
 								</a>
-								<a href="{{ route("administrator.position") }}" class="master-data-item">
+								<a href="{{ route("administrator.position") }}" class="master-data-item tone-berry">
 									<span class="master-data-icon" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
 									<span class="master-data-label">Position</span>
 									<span class="master-data-value" data-count-up="administration.positions">0</span>

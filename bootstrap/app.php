@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Middleware\BindSessionToClient;
 use App\Http\Middleware\DataGuard;
 use App\Http\Middleware\EnsureHcmRole;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void
     {
+        $middleware->append(SecurityHeaders::class);
+        $middleware->appendToGroup('web', BindSessionToClient::class);
+
         $middleware->alias([
             'data.guard' => DataGuard::class,
             'role.hcm'   => EnsureHcmRole::class,

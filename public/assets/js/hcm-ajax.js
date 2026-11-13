@@ -57,11 +57,14 @@ function initSelect2($scope)
             var $select = $(this);
             var $modal = $select.closest('.modal');
             var hasManyOptions = $select.find('option').length > SEARCHABLE_OPTION_THRESHOLD;
+            var $emptyOption = $select.find('option[value=""]').first();
 
             $select.select2(
             {
                 dropdownParent: $modal.length ? $modal : $(document.body),
-                minimumResultsForSearch: hasManyOptions ? 0 : Infinity
+                minimumResultsForSearch: hasManyOptions ? 0 : Infinity,
+                placeholder: $emptyOption.text() || 'Pilih salah satu',
+                allowClear: $emptyOption.length > 0
             });
         });
 }
@@ -71,9 +74,57 @@ function refreshSelect2($scope)
     $scope.find('select.select2-hidden-accessible').trigger('change.select2');
 }
 
+flatpickr.localize(flatpickr.l10ns.id);
+
+var DATEPICKER_OPTIONS =
+{
+    dateFormat: 'Y-m-d',
+    altInput: true,
+    altFormat: 'j F Y',
+    altInputClass: 'form-control datepicker-input',
+    allowInput: true,
+    disableMobile: true,
+    monthSelectorType: 'static'
+};
+
+function initDatepickers($scope)
+{
+    $scope.find('input[type="date"]').each(function ()
+    {
+        var isInsideModal = $(this).closest('.modal').length > 0;
+
+        $(this).attr('data-datepicker', '');
+        $(this).attr('placeholder', $(this).attr('placeholder') || 'Pilih tanggal');
+        flatpickr(this, $.extend({}, DATEPICKER_OPTIONS, { static: isInsideModal }));
+    });
+}
+
+function refreshDatepickers($scope)
+{
+    $scope.find('input[data-datepicker]').each(function ()
+    {
+        this._flatpickr.setDate(this.value || null, false);
+    });
+}
+
+$(document).on('reset', 'form', function ()
+{
+    $(this).find('input[data-datepicker]').each(function ()
+    {
+        this._flatpickr.clear(false);
+    });
+});
+
+function refreshFormControls($scope)
+{
+    refreshSelect2($scope);
+    refreshDatepickers($scope);
+}
+
 $(function ()
 {
     initSelect2($(document.body));
+    initDatepickers($(document.body));
 });
 
 $(document).on('init.dt', function (event, settings)
@@ -164,7 +215,7 @@ function bindFilterPanel($filterPanel, onFilterChange)
         onFilterChange();
     }
 
-    $filterPanel.on('change', 'select[data-filter], input[type="date"][data-filter]', applyFilters);
+    $filterPanel.on('change', 'select[data-filter], input[data-datepicker][data-filter]', applyFilters);
 
     $filterPanel.on('input', 'input[type="search"][data-filter]', function ()
     {
@@ -174,7 +225,8 @@ function bindFilterPanel($filterPanel, onFilterChange)
 
     $filterPanel.on('click', '[data-filter-reset]', function ()
     {
-        $filterPanel.find('[data-filter]').val('').trigger('change.select2');
+        $filterPanel.find('[data-filter]').val('');
+        refreshFormControls($filterPanel);
         applyFilters();
     });
 }

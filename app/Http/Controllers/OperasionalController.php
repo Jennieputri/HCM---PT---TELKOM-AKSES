@@ -8,11 +8,7 @@ class OperasionalController extends Controller
 {
     public function strukturOrganisasi()
     {
-        $dataStruktur = StrukturOrganisasiModel::getAll();
-
-        return view('operasional.struktur-organisasi', [
-            'dataStruktur' => $dataStruktur,
-        ]);
+        return view('operasional.struktur-organisasi', StrukturOrganisasiModel::chart());
     }
 
     public function absen()

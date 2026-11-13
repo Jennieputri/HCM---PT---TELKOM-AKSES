@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Collection;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -11,466 +11,209 @@ use Symfony\Component\Process\Process;
 
 class AbsenPdfGenerator
 {
-    private const LIBREOFFICE =
-        'C:\\Program Files\\LibreOffice\\program\\soffice.com';
+    private const CONVERSION_TIMEOUT_SECONDS = 120;
 
-    public static function cuti(
-        object $absen,
-        object $karyawan,
-        object $cuti
-    ): string {
-        $processor = self::processor(
-            self::template('template_pdf_cuti.docx')
-        );
+    private const EMPTY_VALUE = '-';
 
-        $processor->setValue('nama', self::text($karyawan->name ?? null));
-        $processor->setValue('jabatan', self::text(
-            $cuti->jabatan ?? $karyawan->jabatan ?? $karyawan->position ?? null
-        ));
-        $processor->setValue('unit_kerja', self::text(
-            $cuti->unit_kerja ?? $karyawan->unit_kerja ?? $karyawan->unit ?? null
-        ));
-        $processor->setValue('band', self::text(
-            $cuti->band ?? $karyawan->band ?? null
-        ));
-        $processor->setValue('nik', self::text(
-            $karyawan->nik ?? $absen->nik_karyawan ?? null
-        ));
+    private const SPPD_ROW_FIELDS = ['nomor_urut', 'nik_karyawan', 'nama_karyawan', 'position', 'kota_asal', 'kota_tujuan'];
 
-        $processor->setValue('lama_cuti', self::text(
-            $cuti->lama_cuti ?? null
-        ));
+    public static function cuti(object $absen, object $karyawan, object $manager, object $atasan, array $leaveBalance)
+    {
+        $processor = self::processor('template_cuti.docx');
 
-        $processor->setValue('jenis_cuti', self::text(
-            $cuti->jenis_cuti ?? null
-        ));
+        $processor->setValues([
+            'nama'              => self::upperText($karyawan->name),
+            'nik'               => self::text($karyawan->nik),
+            'band'              => self::text($absen->band),
+            'jabatan'           => self::text($absen->jabatan),
+            'unit_kerja'        => self::text($absen->unit_kerja),
+            'jenis_cuti'        => self::text($absen->jenis_cuti),
+            'lama_cuti'         => self::text($absen->lama_cuti),
+            'cuti_mulai'        => self::upperDate($absen->tanggal_mulai),
+            'cuti_selesai'      => self::upperDate($absen->tanggal_selesai),
+            'alamat_cuti'       => self::text($absen->alamat_selama_cuti),
+            'telepon_cuti'      => self::text($absen->telepon_cuti),
+            'berangkat_mulai'   => self::upperDate($absen->perjalanan_berangkat_mulai),
+            'berangkat_selesai' => self::upperDate($absen->perjalanan_berangkat_selesai),
+            'pulang_mulai'      => self::upperDate($absen->perjalanan_pulang_mulai),
+            'pulang_selesai'    => self::upperDate($absen->perjalanan_pulang_selesai),
+            'alasan_cuti'       => self::text($absen->keterangan),
+            'nama_manager'      => self::upperText($manager->nama),
+            'nik_manager'       => self::text($manager->nik),
+            'nama_atasan'       => self::upperText($atasan->name),
+            'nik_atasan'        => self::text($atasan->nik),
+            'saldo_cuti'        => self::text($leaveBalance['saldo']),
+            'sisa_cuti'         => self::text($leaveBalance['sisa']),
+        ]);
 
-        $processor->setValue('cuti_mulai', self::date(
-            $cuti->tanggal_mulai ?? null
-        ));
-
-        $processor->setValue('cuti_selesai', self::date(
-            $cuti->tanggal_selesai ?? null
-        ));
-
-        $processor->setValue('alamat_cuti', self::text(
-            $cuti->alamat_selama_cuti ?? null
-        ));
-
-        $processor->setValue('no_hp_cuti', self::text(
-            $cuti->telepon_cuti ?? null
-        ));
-
-        $processor->setValue(
-            'perjalanan_cuti_brngkt',
-            self::dateRange(
-                $cuti->perjalanan_berangkat_mulai ?? null,
-                $cuti->perjalanan_berangkat_selesai ?? null
-            )
-        );
-
-        $processor->setValue(
-            'perjalanan_cuti_pulang',
-            self::dateRange(
-                $cuti->perjalanan_pulang_mulai ?? null,
-                $cuti->perjalanan_pulang_selesai ?? null
-            )
-        );
-
-        $processor->setValue('alasan_cuti', self::text(
-            $cuti->alasan_cuti ?? null
-        ));
-
-        $processor->setValue('nik_mengajukan', self::text(
-            $karyawan->nik ?? $absen->nik_karyawan ?? null
-        ));
-
-        // Placeholder ini belum memiliki sumber data pada form/pengajuan saat ini.
-        // Isi dengan tanda kosong yang konsisten agar tidak ada token {..} tersisa.
-        $processor->setValue('nik_manager', '-');
-        $processor->setValue('nik_atasan', '-');
-        $processor->setValue('saldo_cuti', '-');
-        $processor->setValue('sisa_cuti', '-');
-
-        return self::toPdf($processor);
+        return self::convertToPdf($processor);
     }
 
-    public static function sppd(
-        object $sppd,
-        Collection $sppdKaryawan
-    ): string {
-        $processor = self::processor(
-            self::template('template_pdf_sppd.docx')
-        );
+    public static function sppd(object $absen, array $assignedEmployees, object $manager)
+    {
+        $processor = self::processor('template_sppd.docx');
 
-        $processor->setValue(
-            'tgl_penulisan_sppd',
-            self::date($sppd->tanggal_surat ?? null)
-        );
+        $processor->setValues([
+            'tanggal_surat'         => self::longDate($absen->tanggal_surat),
+            'perihal_pekerjaan'     => self::text($absen->keterangan),
+            'lokasi_pekerjaan'      => self::text($absen->lokasi_pekerjaan),
+            'tanggal_mulai'         => self::longDate($absen->tanggal_mulai),
+            'tanggal_selesai'       => self::longDate($absen->tanggal_selesai),
+            'kota_surat'            => self::text(config('absen.kota_surat')),
+            'nama_pemberi_tugas'    => self::text($manager->nama),
+            'jabatan_pemberi_tugas' => self::text($manager->jabatan),
+        ]);
 
-        $processor->setValue(
-            'perihal_pekerjaan',
-            self::text($sppd->perihal_pekerjaan ?? null)
-        );
+        $employeeRows = [];
 
-        $processor->setValue(
-            'lokasi_sppd',
-            self::text($sppd->lokasi_pekerjaan ?? null)
-        );
-
-        $processor->setValue(
-            'tgl_mulai_sppd',
-            self::date($sppd->tanggal_mulai_penugasan ?? null)
-        );
-
-        $processor->setValue(
-            'tgl_selesai_sppd',
-            self::date($sppd->tanggal_selesai_penugasan ?? null)
-        );
-
-        $rows = $sppdKaryawan->map(
-            fn (object $pegawai) => [
-                'nik_karyawan' => self::text($pegawai->nik ?? null),
-                'nama_karyawan' => self::text($pegawai->nama ?? null),
-                'position_sppd' => self::text($pegawai->position ?? null),
-                'Kota_asal' => self::text($pegawai->kota_asal ?? null),
-                'Kota_tujuan' => self::text($pegawai->kota_tujuan ?? null),
-            ]
-        )->values()->all();
-
-        if ($rows === []) {
-            $rows[] = [
-                'nik_karyawan' => '-',
-                'nama_karyawan' => '-',
-                'position_sppd' => '-',
-                'Kota_asal' => '-',
-                'Kota_tujuan' => '-',
+        foreach (array_values($assignedEmployees) as $rowIndex => $employee)
+        {
+            $employeeRows[] = [
+                'nomor_urut'    => (string) ($rowIndex + 1),
+                'nik_karyawan'  => self::text($employee->nik ?? null),
+                'nama_karyawan' => self::text($employee->nama ?? null),
+                'position'      => self::text($employee->position ?? null),
+                'kota_asal'     => self::text($employee->kota_asal ?? null),
+                'kota_tujuan'   => self::text($employee->kota_tujuan ?? null),
             ];
         }
 
-        $processor->cloneRowAndSetValues(
-            'nik_karyawan',
-            $rows
-        );
+        if ($employeeRows === [])
+        {
+            $employeeRows[] = array_fill_keys(self::SPPD_ROW_FIELDS, self::EMPTY_VALUE);
+        }
 
-        return self::toPdf($processor);
+        $processor->cloneRowAndSetValues('nik_karyawan', $employeeRows);
+
+        return self::convertToPdf($processor);
     }
 
-    private static function processor(string $template): TemplateProcessor
+    public static function sakit(object $absen, object $karyawan, object $atasan)
     {
-        $temporaryDirectory = storage_path(
-            'framework/cache/phpword'
-        );
+        $processor = self::processor('template_sakit.docx');
 
-        File::ensureDirectoryExists($temporaryDirectory);
+        $processor->setValues([
+            'nomor_dokumen'   => self::text($absen->nomor_dokumen),
+            'nama'            => self::upperText($karyawan->name),
+            'nik'             => self::text($karyawan->nik),
+            'tanggal_mulai'   => self::longDate($absen->tanggal_mulai),
+            'tanggal_selesai' => self::longDate($absen->tanggal_selesai),
+            'lama_izin'       => self::text((int) Carbon::parse($absen->tanggal_mulai)->diffInDays(Carbon::parse($absen->tanggal_selesai)) + 1),
+            'keterangan'      => self::text($absen->keterangan),
+            'surat_dokter'    => $absen->surat_dokter_path ? 'Terlampir' : 'Tidak ada',
+            'kota_surat'      => self::text(config('absen.kota_surat')),
+            'tanggal_surat'   => self::longDate($absen->updated_at),
+            'nama_atasan'     => self::upperText($atasan->name),
+            'nik_atasan'      => self::text($atasan->nik),
+        ]);
 
-        Settings::setTempDir($temporaryDirectory);
-
-        // PhpWord memerlukan format ${nama} untuk setValue dan cloneRow.
-        // Normalisasi salinan sementara agar file template asli tetap utuh.
-        $normalizedTemplate = self::normalizeTemplateMacros(
-            $template,
-            $temporaryDirectory
-        );
-
-        try {
-            return new TemplateProcessor($normalizedTemplate);
-        } finally {
-            if (is_file($normalizedTemplate)) {
-                unlink($normalizedTemplate);
-            }
-        }
+        return self::convertToPdf($processor);
     }
 
-    /**
-     * Convert {placeholder} macros (including macros split between Word runs)
-     * to PhpWord's ${placeholder} format without changing the source template.
-     */
-    private static function normalizeTemplateMacros(
-        string $template,
-        string $temporaryDirectory
-    ): string {
-        $normalizedTemplate = $temporaryDirectory
-            . DIRECTORY_SEPARATOR
-            . uniqid('template-', true)
-            . '.docx';
+    private static function processor(string $templateName)
+    {
+        $templatePath = resource_path('templates/'.$templateName);
 
-        if (! copy($template, $normalizedTemplate)) {
-            throw new RuntimeException(
-                'Template Word tidak dapat disiapkan untuk diproses.'
-            );
+        if (! is_file($templatePath))
+        {
+            throw new RuntimeException('Template Word tidak ditemukan: '.$templateName);
         }
 
-        $archive = new \ZipArchive();
-        if ($archive->open($normalizedTemplate) !== true) {
-            unlink($normalizedTemplate);
-            throw new RuntimeException(
-                'File template Word tidak dapat dibuka.'
-            );
-        }
+        Settings::setTempDir(self::workingDirectory());
+        Settings::setOutputEscapingEnabled(true);
 
-        try {
-            for ($index = 0; $index < $archive->numFiles; $index++) {
-                $partName = $archive->getNameIndex($index);
-
-                if (
-                    ! is_string($partName)
-                    || ! str_starts_with($partName, 'word/')
-                    || ! str_ends_with($partName, '.xml')
-                ) {
-                    continue;
-                }
-
-                $xml = $archive->getFromName($partName);
-                if (! is_string($xml) || ! str_contains($xml, '{')) {
-                    continue;
-                }
-
-                $document = new \DOMDocument();
-                $document->preserveWhiteSpace = true;
-                if (! $document->loadXML($xml, LIBXML_NONET)) {
-                    throw new RuntimeException(
-                        'Bagian template Word tidak dapat dibaca: ' . $partName
-                    );
-                }
-
-                $xpath = new \DOMXPath($document);
-                $xpath->registerNamespace(
-                    'w',
-                    'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
-                );
-
-                foreach ($xpath->query('//w:p') as $paragraph) {
-                    $textNodes = [];
-                    foreach ($xpath->query('.//w:t', $paragraph) as $textNode) {
-                        $ancestor = $textNode->parentNode;
-                        $belongsToParagraph = true;
-                        while ($ancestor && $ancestor !== $paragraph) {
-                            if (
-                                $ancestor instanceof \DOMElement
-                                && $ancestor->namespaceURI === 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
-                                && $ancestor->localName === 'p'
-                            ) {
-                                $belongsToParagraph = false;
-                                break;
-                            }
-                            $ancestor = $ancestor->parentNode;
-                        }
-
-                        if ($belongsToParagraph) {
-                            $textNodes[] = $textNode;
-                        }
-                    }
-
-                    $starts = [];
-                    $paragraphText = '';
-                    foreach ($textNodes as $textNode) {
-                        $starts[] = strlen($paragraphText);
-                        $paragraphText .= $textNode->nodeValue ?? '';
-                    }
-
-                    if (! preg_match_all(
-                        '/\$?\{([A-Za-z][A-Za-z0-9_]*)\}/',
-                        $paragraphText,
-                        $macros,
-                        PREG_OFFSET_CAPTURE
-                    )) {
-                        continue;
-                    }
-
-                    for ($matchIndex = count($macros[0]) - 1; $matchIndex >= 0; $matchIndex--) {
-                        $macro = $macros[0][$matchIndex][0];
-                        $macroStart = $macros[0][$matchIndex][1];
-                        $macroEnd = $macroStart + strlen($macro);
-                        $name = $macros[1][$matchIndex][0];
-                        $firstNode = null;
-                        $lastNode = null;
-
-                        foreach ($textNodes as $nodeIndex => $textNode) {
-                            $nodeStart = $starts[$nodeIndex];
-                            $nodeEnd = $nodeStart + strlen($textNode->nodeValue ?? '');
-                            if ($firstNode === null && $macroStart >= $nodeStart && $macroStart < $nodeEnd) {
-                                $firstNode = $nodeIndex;
-                            }
-                            if ($macroEnd > $nodeStart && $macroEnd <= $nodeEnd) {
-                                $lastNode = $nodeIndex;
-                                break;
-                            }
-                        }
-
-                        if ($firstNode === null || $lastNode === null) {
-                            continue;
-                        }
-
-                        $replacement = '${' . $name . '}';
-                        $firstValue = $textNodes[$firstNode]->nodeValue ?? '';
-                        $firstOffset = $macroStart - $starts[$firstNode];
-                        $lastValue = $textNodes[$lastNode]->nodeValue ?? '';
-                        $lastOffset = $macroEnd - $starts[$lastNode];
-
-                        if ($firstNode === $lastNode) {
-                            $textNodes[$firstNode]->nodeValue = substr($firstValue, 0, $firstOffset)
-                                . $replacement
-                                . substr($firstValue, $lastOffset);
-                            continue;
-                        }
-
-                        $textNodes[$firstNode]->nodeValue = substr($firstValue, 0, $firstOffset)
-                            . $replacement;
-                        for ($nodeIndex = $firstNode + 1; $nodeIndex < $lastNode; $nodeIndex++) {
-                            $textNodes[$nodeIndex]->nodeValue = '';
-                        }
-                        $textNodes[$lastNode]->nodeValue = substr($lastValue, $lastOffset);
-                    }
-                }
-
-                $archive->addFromString($partName, $document->saveXML());
-            }
-        } catch (\Throwable $exception) {
-            $archive->close();
-            unlink($normalizedTemplate);
-            throw $exception;
-        }
-
-        $archive->close();
-
-        return $normalizedTemplate;
+        return new TemplateProcessor($templatePath);
     }
 
-    private static function toPdf(
-        TemplateProcessor $processor
-    ): string {
-        $temporaryDirectory = storage_path(
-            'framework/cache/phpword'
-        );
+    private static function convertToPdf(TemplateProcessor $processor)
+    {
+        $libreOfficeBinary = (string) config('services.libreoffice.binary');
 
-        File::ensureDirectoryExists($temporaryDirectory);
-
-        if (! is_file(self::LIBREOFFICE)) {
-            throw new RuntimeException(
-                'LibreOffice tidak ditemukan.'
-            );
+        if ($libreOfficeBinary === '' || ! is_file($libreOfficeBinary))
+        {
+            throw new RuntimeException('LibreOffice tidak ditemukan. Atur LIBREOFFICE_BINARY di .env.');
         }
 
-        $filename = uniqid('absen-', true);
+        $workingDirectory = self::workingDirectory();
+        $fileName         = uniqid('absen-', true);
+        $docxPath         = $workingDirectory.DIRECTORY_SEPARATOR.$fileName.'.docx';
+        $pdfPath          = $workingDirectory.DIRECTORY_SEPARATOR.$fileName.'.pdf';
+        $profileDirectory = $workingDirectory.DIRECTORY_SEPARATOR.'lo-profile-'.$fileName;
 
-        $docxPath = $temporaryDirectory
-            . DIRECTORY_SEPARATOR
-            . $filename
-            . '.docx';
-
-        $pdfPath = $temporaryDirectory
-            . DIRECTORY_SEPARATOR
-            . $filename
-            . '.pdf';
-        $profileDirectory = $temporaryDirectory
-            . DIRECTORY_SEPARATOR
-            . 'lo-profile-' . $filename;
-
-        try {
+        try
+        {
             $processor->saveAs($docxPath);
             File::ensureDirectoryExists($profileDirectory);
 
-            // Satu profil sementara per konversi mencegah bentrok dengan
-            // sesi LibreOffice lain yang memakai profil default.
-            $profileUri = 'file:///' . str_replace(
-                ['\\', ' '],
-                ['/', '%20'],
-                $profileDirectory
-            );
-
             $process = new Process([
-                self::LIBREOFFICE,
-                '-env:UserInstallation=' . $profileUri,
+                $libreOfficeBinary,
+                '-env:UserInstallation='.self::fileUri($profileDirectory),
                 '--headless',
                 '--nologo',
                 '--convert-to',
                 'pdf',
                 '--outdir',
-                $temporaryDirectory,
+                $workingDirectory,
                 $docxPath,
-            ], $temporaryDirectory, [
-                'TEMP' => $temporaryDirectory,
-                'TMP' => $temporaryDirectory,
-            ]);
+            ], $workingDirectory, ['TEMP' => $workingDirectory, 'TMP' => $workingDirectory]);
 
-            $process->setTimeout(120);
+            $process->setTimeout(self::CONVERSION_TIMEOUT_SECONDS);
             $process->run();
 
-            if (! $process->isSuccessful() || ! is_file($pdfPath)) {
-                throw new RuntimeException(
-                    'Konversi PDF gagal. '
-                    . 'Exit Code: ' . var_export($process->getExitCode(), true)
-                    . ' | Error: ' . $process->getErrorOutput()
-                    . ' | Output: ' . $process->getOutput()
-                );
+            if (! $process->isSuccessful() || ! is_file($pdfPath))
+            {
+                throw new RuntimeException('Konversi PDF gagal. Exit code: '.var_export($process->getExitCode(), true).' | '.$process->getErrorOutput());
             }
 
-            $contents = file_get_contents($pdfPath);
+            $pdfContents = (string) file_get_contents($pdfPath);
 
-            if (
-                $contents === false
-                || $contents === ''
-                || substr($contents, 0, 5) !== '%PDF-'
-            ) {
-                throw new RuntimeException(
-                    'File PDF tidak valid.'
-                );
+            if (! str_starts_with($pdfContents, '%PDF-'))
+            {
+                throw new RuntimeException('File PDF tidak valid.');
             }
-            return $contents;
 
-        } finally {
+            return $pdfContents;
+        }
+        finally
+        {
             File::deleteDirectory($profileDirectory);
-
-            foreach ([$docxPath, $pdfPath] as $temporaryFile) {
-                if (is_file($temporaryFile)) {
-                    unlink($temporaryFile);
-                }
-            }
+            File::delete([$docxPath, $pdfPath]);
         }
     }
 
-    private static function template(string $filename): string
+    private static function workingDirectory()
     {
-        $path = resource_path('templates/' . $filename);
+        $workingDirectory = storage_path('framework/cache/phpword');
 
-        if (! is_file($path)) {
-            throw new RuntimeException(
-                'Template Word tidak ditemukan: ' . $filename
-            );
-        }
+        File::ensureDirectoryExists($workingDirectory);
 
-        return $path;
+        return $workingDirectory;
     }
 
-    private static function date(mixed $value): string
+    private static function fileUri(string $path)
     {
-        if (! $value) {
-            return '-';
-        }
-
-        $timestamp = strtotime((string) $value);
-
-        return $timestamp === false ? '-' : date('d-m-Y', $timestamp);
+        return 'file:///'.ltrim(str_replace(['\\', ' '], ['/', '%20'], $path), '/');
     }
 
-    private static function dateRange(
-        mixed $start,
-        mixed $end
-    ): string {
-        if (! $start && ! $end) {
-            return '-';
-        }
-
-        return self::date($start)
-            . ' s.d. '
-            . self::date($end);
-    }
-
-    private static function text(mixed $value): string
+    private static function longDate($value)
     {
-        $text = trim((string) ($value ?? ''));
+        return $value ? Carbon::parse($value)->locale('id')->translatedFormat('j F Y') : self::EMPTY_VALUE;
+    }
 
-        return $text === '' ? '-' : $text;
+    private static function upperDate($value)
+    {
+        return mb_strtoupper(self::longDate($value));
+    }
+
+    private static function text($value)
+    {
+        $text = trim((string) $value);
+
+        return $text === '' ? self::EMPTY_VALUE : $text;
+    }
+
+    private static function upperText($value)
+    {
+        return mb_strtoupper(self::text($value));
     }
 }
