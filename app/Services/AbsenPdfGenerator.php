@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\File;
 use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\TemplateProcessor;
 use RuntimeException;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 class AbsenPdfGenerator
@@ -127,36 +128,19 @@ class AbsenPdfGenerator
 
     private static function convertToPdf(TemplateProcessor $processor)
     {
-        $libreOfficeBinary = (string) config('services.libreoffice.binary');
-
-        if ($libreOfficeBinary === '' || ! is_file($libreOfficeBinary))
-        {
-            throw new RuntimeException('LibreOffice tidak ditemukan. Atur LIBREOFFICE_BINARY di .env.');
-        }
-
         $workingDirectory = self::workingDirectory();
         $fileName         = uniqid('absen-', true);
         $docxPath         = $workingDirectory.DIRECTORY_SEPARATOR.$fileName.'.docx';
         $pdfPath          = $workingDirectory.DIRECTORY_SEPARATOR.$fileName.'.pdf';
         $profileDirectory = $workingDirectory.DIRECTORY_SEPARATOR.'lo-profile-'.$fileName;
 
+        set_time_limit(self::CONVERSION_TIMEOUT_SECONDS + 30);
+
         try
         {
             $processor->saveAs($docxPath);
-            File::ensureDirectoryExists($profileDirectory);
 
-            $process = new Process([
-                $libreOfficeBinary,
-                '-env:UserInstallation='.self::fileUri($profileDirectory),
-                '--headless',
-                '--nologo',
-                '--convert-to',
-                'pdf',
-                '--outdir',
-                $workingDirectory,
-                $docxPath,
-            ], $workingDirectory, ['TEMP' => $workingDirectory, 'TMP' => $workingDirectory]);
-
+            $process = self::conversionProcess($docxPath, $pdfPath, $workingDirectory, $profileDirectory);
             $process->setTimeout(self::CONVERSION_TIMEOUT_SECONDS);
             $process->run();
 
@@ -179,6 +163,87 @@ class AbsenPdfGenerator
             File::deleteDirectory($profileDirectory);
             File::delete([$docxPath, $pdfPath]);
         }
+    }
+
+    private static function conversionProcess(string $docxPath, string $pdfPath, string $workingDirectory, string $profileDirectory)
+    {
+        $converter         = (string) config('services.pdf_converter');
+        $libreOfficeBinary = self::libreOfficeBinary();
+
+        if ($converter === 'auto')
+        {
+            $converter = match (true)
+            {
+                $libreOfficeBinary !== null => 'libreoffice',
+                PHP_OS_FAMILY === 'Windows' => 'msword',
+                default                     => throw new RuntimeException('Konverter PDF tidak ditemukan. Pasang LibreOffice atau MS Word.'),
+            };
+        }
+
+        return match ($converter)
+        {
+            'libreoffice' => self::libreOfficeProcess($libreOfficeBinary, $docxPath, $workingDirectory, $profileDirectory),
+            'msword'      => self::microsoftWordProcess($docxPath, $pdfPath, $workingDirectory),
+            default       => throw new RuntimeException('PDF_CONVERTER harus auto, libreoffice, atau msword.'),
+        };
+    }
+
+    private static function libreOfficeBinary()
+    {
+        $configuredBinary = (string) config('services.libreoffice.binary');
+
+        if ($configuredBinary !== '' && is_file($configuredBinary))
+        {
+            return $configuredBinary;
+        }
+
+        $standardInstallDirectories = ['/Applications/LibreOffice.app/Contents/MacOS'];
+
+        foreach (array_filter([getenv('ProgramFiles'), getenv('ProgramFiles(x86)')]) as $programFilesDirectory)
+        {
+            $standardInstallDirectories[] = $programFilesDirectory.DIRECTORY_SEPARATOR.'LibreOffice'.DIRECTORY_SEPARATOR.'program';
+        }
+
+        return (new ExecutableFinder)->find('soffice', null, $standardInstallDirectories);
+    }
+
+    private static function libreOfficeProcess(?string $libreOfficeBinary, string $docxPath, string $workingDirectory, string $profileDirectory)
+    {
+        if ($libreOfficeBinary === null)
+        {
+            throw new RuntimeException('LibreOffice tidak ditemukan. Atur LIBREOFFICE_BINARY di .env.');
+        }
+
+        File::ensureDirectoryExists($profileDirectory);
+
+        return new Process([
+            $libreOfficeBinary,
+            '-env:UserInstallation='.self::fileUri($profileDirectory),
+            '--headless',
+            '--nologo',
+            '--convert-to',
+            'pdf',
+            '--outdir',
+            $workingDirectory,
+            $docxPath,
+        ], $workingDirectory, ['TEMP' => $workingDirectory, 'TMP' => $workingDirectory]);
+    }
+
+    private static function microsoftWordProcess(string $docxPath, string $pdfPath, string $workingDirectory)
+    {
+        return new Process([
+            'powershell.exe',
+            '-NoProfile',
+            '-NonInteractive',
+            '-ExecutionPolicy',
+            'Bypass',
+            '-File',
+            resource_path('scripts/docx-to-pdf.ps1'),
+            '-InputPath',
+            $docxPath,
+            '-OutputPath',
+            $pdfPath,
+        ], $workingDirectory);
     }
 
     private static function workingDirectory()

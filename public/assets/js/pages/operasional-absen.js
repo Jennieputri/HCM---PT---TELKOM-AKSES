@@ -98,12 +98,7 @@ $(function ()
 
         if (absen.status === 'Disetujui')
         {
-            $actions.append(
-                $('<a class="btn btn-icon btn-table-action btn-download-pdf" download></a>')
-                    .attr('href', '/operasional/absen/' + encodeURIComponent(absen.id) + '/download')
-                    .attr('aria-label', 'Unduh PDF')
-                    .append('<i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>')
-            );
+            $actions.append(actionButton('btn-download-pdf', 'bi-file-earmark-pdf', 'Unduh PDF'));
         }
 
         if (isPending && isHcm)
@@ -306,6 +301,73 @@ $(function ()
             .always(function ()
             {
                 $submitButton.prop('disabled', false);
+            });
+    });
+
+    function savePdfFile(pdfBlob, fileName)
+    {
+        var fileUrl = URL.createObjectURL(pdfBlob);
+        var $downloadLink = $('<a></a>').attr({ href: fileUrl, download: fileName }).appendTo('body');
+
+        $downloadLink.get(0).click();
+        $downloadLink.remove();
+
+        setTimeout(function ()
+        {
+            URL.revokeObjectURL(fileUrl);
+        }, 1000);
+    }
+
+    function showDownloadError(xhr)
+    {
+        if (! (xhr.response instanceof Blob))
+        {
+            showMessage(readErrorMessage(xhr), 'error');
+            return;
+        }
+
+        xhr.response.text().then(function (responseText)
+        {
+            try
+            {
+                xhr.responseJSON = JSON.parse(responseText);
+            }
+            catch (parseError)
+            {
+                xhr.responseJSON = null;
+            }
+
+            showMessage(readErrorMessage(xhr), 'error');
+        });
+    }
+
+    $('#absen-table').on('click', '.btn-download-pdf', function ()
+    {
+        var $button = $(this);
+        var absen = rowData(this);
+
+        $button.prop('disabled', true);
+
+        $.ajax(
+            {
+                url: '/operasional/absen/' + encodeURIComponent(absen.id) + '/download',
+                method: 'GET',
+                xhrFields: { responseType: 'blob' }
+            })
+            .done(function (pdfBlob)
+            {
+                if (pdfBlob.type !== 'application/pdf')
+                {
+                    showMessage('File PDF tidak valid. Silakan coba lagi.', 'error');
+                    return;
+                }
+
+                savePdfFile(pdfBlob, absen.nomor_dokumen + '.pdf');
+            })
+            .fail(showDownloadError)
+            .always(function ()
+            {
+                $button.prop('disabled', false);
             });
     });
 

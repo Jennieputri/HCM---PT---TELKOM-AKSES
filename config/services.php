@@ -23,6 +23,8 @@ return [
         ],
     ],
 
+    'pdf_converter' => env('PDF_CONVERTER', 'auto'),
+
     'libreoffice' => [
         'binary' => env('LIBREOFFICE_BINARY'),
     ],
